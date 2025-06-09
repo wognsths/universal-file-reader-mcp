@@ -1,3 +1,13 @@
+# universal-file-reader-mcp
+MCP server that converts data to machine-readable format
+
+## Running Tests
+
+Install dependencies and run the test suite using [pytest](https://pytest.org):
+
+```bash
+pytest
+=======
 # Universal File Reader MCP
 
 This project provides an MCP server capable of extracting information from PDF, CSV and image files. The server automatically selects the best processor for each file and can fall back to OCR when needed.
