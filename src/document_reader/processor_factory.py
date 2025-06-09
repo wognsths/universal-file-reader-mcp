@@ -169,6 +169,26 @@ class ProcessorFactory:
             
             # 파일 처리
             result = processor.process(file_path, output_format, **kwargs)
+
+            # PDF 처리 실패 또는 텍스트 부족 시 OCR 폴백
+            if (
+                isinstance(processor, PDFProcessor)
+                and self.config.pdf_config.USE_OCR_FALLBACK
+                and (
+                    not result.get("success", False)
+                    or result.get("word_count", 0)
+                    < self.config.pdf_config.MIN_TEXT_THRESHOLD
+                )
+            ):
+                logger.info(
+                    "PDF 처리 결과가 부족하여 OCR 폴백을 수행합니다",
+                    extra={"file_path": file_path},
+                )
+                ocr_proc = self.get_processor(file_path, "ocr")
+                result = ocr_proc.process(
+                    file_path, output_format, **kwargs
+                )
+                result["fallback_to_ocr"] = True
             
             processing_time = time.time() - start_time
             
