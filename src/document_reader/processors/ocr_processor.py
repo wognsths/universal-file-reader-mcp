@@ -1,23 +1,21 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Any, List, Optional, Protocol, Union
+from typing import Dict, Any, List, Optional, Protocol
 from pathlib import Path
 from dataclasses import dataclass
-from abc import ABC, abstractmethod
 import json
 import requests
 from datetime import datetime
 import logging.config
 
 import google.generativeai as genai
-from PIL import Image, ImageOps
-from pydantic import BaseModel, Field, ValidationError as PydanticValidationError, field_validator
+from PIL import Image
+from pydantic import BaseModel, Field, field_validator
 
 from .base_processor import BaseProcessor
 
 from ..core.exceptions import (
-    OCRError,
     APIKeyError,
     ProcessingError,
     ValidationError
