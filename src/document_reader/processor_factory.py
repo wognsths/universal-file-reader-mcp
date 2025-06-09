@@ -99,8 +99,8 @@ class ProcessorFactory:
             pdf_processor = self._create_processor('pdf')
             
             # 간단한 텍스트 추출 테스트
-            import pymupdf
-            with pymupdf.open(file_path) as doc:
+            import fitz
+            with fitz.open(file_path) as doc:
                 if len(doc) > 0:
                     page = doc[0]
                     text = page.get_text()

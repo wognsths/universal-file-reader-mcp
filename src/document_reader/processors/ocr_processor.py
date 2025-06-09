@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, ValidationError as PydanticValidationErro
 
 from .base_processor import BaseProcessor
 
-from core.exceptions import (
+from ..core.exceptions import (
     OCRError,
     APIKeyError,
     ProcessingError,

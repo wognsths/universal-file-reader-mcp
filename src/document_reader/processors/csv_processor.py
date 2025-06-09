@@ -16,12 +16,12 @@ from pydantic import BaseModel, Field, field_validator
 
 from .base_processor import BaseProcessor
 
-from core.exceptions import (
+from ..core.exceptions import (
     CSVError,
     FileSizeError,
     EncodingError,
 )
-from core.models import (
+from ..core.models import (
     CSVAnalysis,
     CSVChunk,
     CSVResult,
