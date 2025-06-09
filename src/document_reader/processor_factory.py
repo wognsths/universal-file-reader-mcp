@@ -3,6 +3,7 @@
 from typing import Dict, Type, Optional, List, Any
 from pathlib import Path
 import logging
+import fitz
 
 from .processors.base_processor import BaseProcessor
 from .processors.csv_processor import CSVProcessor
@@ -99,7 +100,6 @@ class ProcessorFactory:
             pdf_processor = self._create_processor('pdf')
             
             # 간단한 텍스트 추출 테스트
-            import fitz
             with fitz.open(file_path) as doc:
                 if len(doc) > 0:
                     page = doc[0]

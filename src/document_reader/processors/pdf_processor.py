@@ -81,7 +81,7 @@ class PDFProcessor(BaseProcessor):
         if file_size_mb > self.max_file_size_mb:
             return f"File too large: {file_size_mb:.1f}MB > {self.max_file_size_mb}MB"
         
-        # Test PDF validity with PyMuPDF
+        # Test PDF validity with fitz (PyMuPDF)
         try:
             with fitz.open(file_path) as test_doc:
                 if test_doc.is_encrypted:
