@@ -21,8 +21,7 @@ from ..core.exceptions import (
     ValidationError
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Logger for this module (configured via ``setup_logging()`` below)
 logger = logging.getLogger(__name__)
 
 class JsonFormatter(logging.Formatter):
@@ -788,3 +787,7 @@ class OCRProcessor(BaseProcessor):
                 extra={"page_num": page_num, "error_type": type(e).__name__}
             )
             return Exception(f"Error processing page {page_num}: {str(e)}")
+
+
+# Initialize logging when the module is imported
+setup_logging()
