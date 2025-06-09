@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 import time
 
-import pymupdf
+import fitz
 from .base_processor import BaseProcessor
 
 logger = logging.getLogger(__name__)
@@ -83,12 +83,12 @@ class PDFProcessor(BaseProcessor):
         
         # Test PDF validity with PyMuPDF
         try:
-            with pymupdf.open(file_path) as test_doc:
+            with fitz.open(file_path) as test_doc:
                 if test_doc.is_encrypted:
                     return "Password-protected PDFs not supported"
                 if len(test_doc) == 0:
                     return "PDF contains no pages"
-        except pymupdf.FileDataError:
+        except fitz.FileDataError:
             return "Corrupted or invalid PDF file"
         except Exception as e:
             return f"PDF validation error: {str(e)}"
@@ -108,7 +108,7 @@ class PDFProcessor(BaseProcessor):
             }
             
             # 검색 결과 [9] 방식 참고
-            with pymupdf.open(file_path) as doc:
+            with fitz.open(file_path) as doc:
                 result['page_count'] = len(doc)
                 
                 # Extract metadata
@@ -154,7 +154,7 @@ class PDFProcessor(BaseProcessor):
                 result['success'] = True
                 return result
                 
-        except pymupdf.FileDataError as e:
+        except fitz.FileDataError as e:
             return {
                 'success': False,
                 'error': f"PDF file is corrupted or invalid: {str(e)}"
@@ -210,7 +210,7 @@ class PDFProcessor(BaseProcessor):
 
         # Add warnings if any
         if result['warnings']:
-            markdown += f"\n## Processing Notes\n"
+            markdown += "\n## Processing Notes\n"
             for warning in result['warnings']:
                 markdown += f"- {warning}\n"
 
