@@ -1,30 +1,27 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Any, List, Optional, Protocol, Union
+from typing import Dict, Any, List, Optional, Protocol
 from pathlib import Path
 from dataclasses import dataclass
-from abc import ABC, abstractmethod
 import json
 import requests
 from datetime import datetime
 import logging.config
 
 import google.generativeai as genai
-from PIL import Image, ImageOps
-from pydantic import BaseModel, Field, ValidationError as PydanticValidationError, field_validator
+from PIL import Image
+from pydantic import BaseModel, Field, field_validator
 
 from .base_processor import BaseProcessor
 
 from ..core.exceptions import (
-    OCRError,
     APIKeyError,
     ProcessingError,
     ValidationError
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Logger for this module (configured via ``setup_logging()`` below)
 logger = logging.getLogger(__name__)
 
 class JsonFormatter(logging.Formatter):
@@ -790,3 +787,7 @@ class OCRProcessor(BaseProcessor):
                 extra={"page_num": page_num, "error_type": type(e).__name__}
             )
             return Exception(f"Error processing page {page_num}: {str(e)}")
+
+
+# Initialize logging when the module is imported
+setup_logging()

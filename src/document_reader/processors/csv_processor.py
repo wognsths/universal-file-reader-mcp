@@ -12,14 +12,12 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field, field_validator
 
 from .base_processor import BaseProcessor
 
 from ..core.exceptions import (
     CSVError,
     FileSizeError,
-    EncodingError,
 )
 from ..core.models import (
     CSVAnalysis,
