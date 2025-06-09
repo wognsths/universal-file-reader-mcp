@@ -95,3 +95,43 @@ def test_get_processor_pdf_with_patch(tmp_path, monkeypatch):
     monkeypatch.setattr(factory, "_choose_pdf_processor", lambda p: "pdf")
     processor = factory.get_processor(str(file_path))
     assert isinstance(processor, pdf_processor.PDFProcessor)
+
+
+def test_process_file_pdf_fallback(tmp_path, monkeypatch):
+    """PDF 프로세서 실패 시 OCR로 폴백되는지 확인"""
+    file_path = tmp_path / "fail.pdf"
+    file_path.write_bytes(b"%PDF-1.4\n")
+
+    class DummyPDFProcessor:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def process(self, *args, **kwargs):
+            return {"success": False, "error": "fail"}
+
+    DummyPDFProcessor.__name__ = "PDFProcessor"
+
+    class DummyOCRProcessor:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def process(self, *args, **kwargs):
+            return {"success": True, "content": "ocr", "processor": "OCRProcessor"}
+
+    DummyOCRProcessor.__name__ = "OCRProcessor"
+
+    factory = processor_factory.ProcessorFactory()
+    monkeypatch.setattr(factory, "_choose_pdf_processor", lambda p: "pdf")
+    monkeypatch.setattr(processor_factory, "PDFProcessor", DummyPDFProcessor)
+    monkeypatch.setattr(processor_factory, "OCRProcessor", DummyOCRProcessor)
+    monkeypatch.setattr(
+        processor_factory.FileValidator,
+        "validate_for_processor",
+        lambda *a, **k: {"is_valid": True, "errors": [], "warnings": [], "file_info": {"size_mb": 1}},
+    )
+    factory._processor_types["pdf"] = DummyPDFProcessor
+    factory._processor_types["ocr"] = DummyOCRProcessor
+
+    result = factory.process_file(str(file_path))
+    assert result["success"] is True
+    assert result.get("fallback_to_ocr") is True
