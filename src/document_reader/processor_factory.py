@@ -2,7 +2,6 @@
 
 from typing import Dict, Type, Optional, List, Any
 from pathlib import Path
-import logging
 
 from .processors.base_processor import BaseProcessor
 from .processors.csv_processor import CSVProcessor
@@ -12,9 +11,8 @@ from .processors.ocr_processor import OCRProcessor
 from .core.config import ProcessorConfig
 from .core.validators import FileValidator, SecurityValidator
 from .core.exceptions import (
-    FileTypeError, 
-    ConfigurationError, 
-    MissingDependencyError
+    FileTypeError,
+    ConfigurationError,
 )
 from .core.logging_config import get_logger, log_processing_start, log_processing_end
 
@@ -96,7 +94,7 @@ class ProcessorFactory:
         """PDF 파일에 대한 최적 프로세서를 선택합니다."""
         try:
             # 먼저 PDF 프로세서로 텍스트 추출 시도
-            pdf_processor = self._create_processor('pdf')
+            self._create_processor('pdf')
             
             # 간단한 텍스트 추출 테스트
             import fitz

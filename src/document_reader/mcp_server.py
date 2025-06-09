@@ -3,13 +3,11 @@
 import asyncio
 from typing import Dict, Any, Optional, List
 import json
-from pathlib import Path
-
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+from mcp.types import Tool, TextContent
 
-from .processor_factory import ProcessorFactory, get_default_factory
+from .processor_factory import ProcessorFactory
 from .core.config import ProcessorConfig
 from .core.logging_config import setup_logging, get_logger
 from .core.exceptions import DocumentProcessorError
