@@ -1,2 +1,2 @@
 # universal-file-reader-mcp
-MCP server that converts data to machine-readable format
+An MCP server that converts data into a machine‑readable format.
