@@ -98,7 +98,7 @@ def test_get_processor_pdf_with_patch(tmp_path, monkeypatch):
 
 
 def test_process_file_pdf_fallback(tmp_path, monkeypatch):
-    """PDF 프로세서 실패 시 OCR로 폴백되는지 확인"""
+    """Verify OCR fallback when PDF processor fails"""
     file_path = tmp_path / "fail.pdf"
     file_path.write_bytes(b"%PDF-1.4\n")
 

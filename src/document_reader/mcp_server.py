@@ -1,4 +1,4 @@
-"""MCP 서버 구현"""
+"""MCP server implementation"""
 
 import asyncio
 from typing import Dict, Any, Optional, List
@@ -12,26 +12,31 @@ from .core.config import ProcessorConfig
 from .core.logging_config import setup_logging, get_logger
 from .core.exceptions import DocumentProcessorError
 
-# 로깅 설정
+# Configure logging
 setup_logging(log_level="INFO", enable_json=True)
 logger = get_logger("mcp_server")
 
-# MCP 서버 인스턴스
+# MCP server instance
 app = Server("universal-file-reader")
 
 
 class UniversalFileReaderMCP:
-    """Universal File Reader MCP 서버"""
+    """Universal File Reader MCP server."""
     
     def __init__(self, config: Optional[ProcessorConfig] = None):
         self.factory = ProcessorFactory(config)
-        logger.info("Universal File Reader MCP 서버 초기화 완료")
+        logger.info("Universal File Reader MCP server initialised")
     
-    async def read_file(self, file_path: str, output_format: str = "markdown", 
-                       force_processor: Optional[str] = None, **kwargs) -> Dict[str, Any]:
-        """파일을 읽고 처리하여 결과를 반환합니다."""
+    async def read_file(
+        self,
+        file_path: str,
+        output_format: str = "markdown",
+        force_processor: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Read a file and return the processed result."""
         try:
-            logger.info(f"파일 처리 요청: {file_path}")
+            logger.info(f"File processing requested: {file_path}")
             
             result = self.factory.process_file(
                 file_path=file_path,
@@ -40,11 +45,11 @@ class UniversalFileReaderMCP:
                 **kwargs
             )
             
-            logger.info(f"파일 처리 완료: {file_path}")
+            logger.info(f"File processing finished: {file_path}")
             return result
             
         except DocumentProcessorError as e:
-            logger.error(f"문서 처리 오류: {e}")
+            logger.error(f"Document processing error: {e}")
             return {
                 "success": False,
                 "error": str(e),
@@ -52,7 +57,7 @@ class UniversalFileReaderMCP:
                 "file_path": file_path
             }
         except Exception as e:
-            logger.error(f"예상치 못한 오류: {e}")
+            logger.error(f"Unexpected error: {e}")
             return {
                 "success": False,
                 "error": f"예상치 못한 오류: {str(e)}",
@@ -61,22 +66,22 @@ class UniversalFileReaderMCP:
             }
     
     def get_server_info(self) -> Dict[str, Any]:
-        """서버 정보를 반환합니다."""
+        """Return basic server information."""
         return {
             "name": "Universal File Reader",
             "version": "1.0.0",
-            "description": "PDF, CSV, 이미지 파일에서 텍스트, 표, 그래프를 추출하는 MCP 서버",
+            "description": "MCP server that extracts text, tables and graphics from PDFs, CSVs and images",
             "processor_info": self.factory.get_processor_info()
         }
 
 
-# MCP 서버 인스턴스
+# MCP server instance
 mcp_server = UniversalFileReaderMCP()
 
 
 @app.list_tools()
 async def list_tools() -> List[Tool]:
-    """사용 가능한 도구 목록을 반환합니다."""
+    """Return the list of available tools."""
     return [
         Tool(
             name="read_file",
@@ -119,19 +124,19 @@ async def list_tools() -> List[Tool]:
         ),
         Tool(
             name="validate_file",
-            description="파일이 처리 가능한지 검증합니다.",
+            description="Validate whether a file can be processed.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "검증할 파일의 경로"
+                        "description": "Path to the file to validate"
                     },
                     "processor_type": {
                         "type": "string",
                         "enum": ["csv", "pdf", "ocr", "auto"],
                         "default": "auto",
-                        "description": "프로세서 타입"
+                        "description": "Processor type"
                     }
                 },
                 "required": ["file_path"]
@@ -142,7 +147,7 @@ async def list_tools() -> List[Tool]:
 
 @app.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
-    """도구 호출을 처리합니다."""
+    """Handle tool invocation."""
     try:
         if name == "read_file":
             result = await mcp_server.read_file(**arguments)
@@ -150,7 +155,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             if result.get("success", False):
                 content = result.get("content", "")
                 
-                # 추가 정보도 포함
+                # Include processing metadata
                 metadata = {
                     "processor": result.get("processor", "unknown"),
                     "file_info": result.get("file_info", {}),
@@ -194,11 +199,11 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             
             from .core.validators import FileValidator, SecurityValidator
             
-            # 기본 검증
+            # Basic validation
             basic_result = FileValidator.validate_file_basic(file_path)
             security_result = SecurityValidator.validate_security(file_path)
             
-            # 프로세서별 검증 (auto가 아닌 경우)
+            # Processor specific validation (when not auto)
             processor_result = None
             if processor_type != "auto":
                 max_size = mcp_server.factory.config.get_max_file_size(processor_type)
@@ -218,7 +223,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 )
             }
             
-            validation_text = f"""# 파일 검증 결과
+            validation_text = f"""# File validation result
 
 ## 전체 검증 결과
 {'✅ 처리 가능' if validation_info['overall_valid'] else '❌ 처리 불가능'}
@@ -240,8 +245,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
 
 async def main():
-    """MCP 서버를 시작합니다."""
-    logger.info("Universal File Reader MCP 서버 시작")
+    """Start the MCP server."""
+    logger.info("Universal File Reader MCP server starting")
     
     async with stdio_server() as streams:
         await app.run(
