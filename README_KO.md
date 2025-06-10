@@ -14,6 +14,17 @@ pip install -e .
 universal-file-reader
 ```
 
+### SSH로 원격 실행하기
+
+다른 서버에서 실행하려면 SSH 명령을 사용할 수 있습니다.
+
+```bash
+ssh user@remote-host universal-file-reader
+```
+
+Google ADK에서는 위 명령을 `ToolSubprocess`에 지정해 원격 서버와
+통신할 수 있습니다.
+
 서버는 `read_file`, `get_supported_formats`, `validate_file` 세 가지 도구를 제공합니다. 자세한 입력 형식은 `src/document_reader/mcp_server.py`를 참고하세요.
 
 ## 환경 변수
