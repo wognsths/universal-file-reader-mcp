@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "universal-file-reader-mcp"
 version = "1.0.0"
 description = "MCP server for extracting information from various file types"
-authors = ["Document Reader Team <noreply@example.com>"]
+authors = ["Document Reader Team <2021122006@yonsei.ac.kr>"]
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

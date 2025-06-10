@@ -1,5 +1,3 @@
-"""통합 설정 관리 시스템"""
-
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from pathlib import Path
@@ -8,14 +6,12 @@ import os
 
 @dataclass
 class GlobalConfig:
-    """전역 설정"""
-    # 공통 파일 처리 설정
+    """Global Configuration"""
     MAX_FILE_SIZE_MB: float = 100.0
     TEMP_DIR: Optional[str] = None
     LOG_LEVEL: str = "INFO"
     ENABLE_STRUCTURED_LOGGING: bool = True
     
-    # 성능 설정
     MAX_WORKERS: int = 4
     TIMEOUT_SECONDS: int = 120
     
@@ -26,7 +22,7 @@ class GlobalConfig:
 
 @dataclass 
 class CSVConfig:
-    """CSV 프로세서 설정"""
+    """CSV Processor Configuration"""
     MAX_FILE_SIZE_MB: float = 30.0
     CHUNK_SIZE: int = 10_000
     SAMPLE_SIZE: int = 1_000
@@ -39,8 +35,8 @@ class CSVConfig:
 
 @dataclass
 class OCRConfig:
-    """OCR 프로세서 설정"""
-    MODEL_NAME: str = "gemini-2.0-flash-exp"
+    """OCR Processor Configuration"""
+    MODEL_NAME: str = "gemini-2.0-flash"
     MAX_FILE_SIZE_MB: float = 50.0
     MAX_DPI: int = 300
     MIN_DPI: int = 150
@@ -56,17 +52,17 @@ class OCRConfig:
 
 @dataclass
 class PDFConfig:
-    """PDF 프로세서 설정"""
+    """PDF Processor Configuration"""
     MAX_FILE_SIZE_MB: float = 50.0
     EXTRACT_IMAGES: bool = False
     EXTRACT_TABLES: bool = True
     USE_OCR_FALLBACK: bool = True
-    MIN_TEXT_THRESHOLD: int = 10  # 최소 텍스트 단어 수
+    MIN_TEXT_THRESHOLD: int = 10  # Minimun text word counts
 
 
 @dataclass
 class ProcessorConfig:
-    """통합 프로세서 설정"""
+    """Overall Processor Configuration"""
     global_config: GlobalConfig = field(default_factory=GlobalConfig)
     csv_config: CSVConfig = field(default_factory=CSVConfig)
     ocr_config: OCRConfig = field(default_factory=OCRConfig)
@@ -74,10 +70,10 @@ class ProcessorConfig:
     
     @classmethod
     def from_env(cls) -> 'ProcessorConfig':
-        """환경 변수에서 설정을 로드합니다."""
+        """Load settings from .env"""
         config = cls()
         
-        # 환경 변수에서 설정 오버라이드
+        # Override
         if max_size := os.getenv('MAX_FILE_SIZE_MB'):
             config.global_config.MAX_FILE_SIZE_MB = float(max_size)
             
@@ -90,7 +86,6 @@ class ProcessorConfig:
         return config
     
     def get_max_file_size(self, processor_type: str) -> float:
-        """프로세서 타입별 최대 파일 크기를 반환합니다."""
         type_configs = {
             'csv': self.csv_config.MAX_FILE_SIZE_MB,
             'ocr': self.ocr_config.MAX_FILE_SIZE_MB,

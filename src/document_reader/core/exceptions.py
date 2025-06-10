@@ -1,10 +1,8 @@
-"""공통 예외 클래스들"""
-
 from typing import Optional, Dict, Any
 
 
 class DocumentProcessorError(Exception):
-    """문서 프로세서 기본 예외"""
+    """Base Exception of Document Processor"""
     def __init__(self, message: str, file_path: Optional[str] = None, 
                  details: Optional[Dict[str, Any]] = None):
         self.message = message
@@ -13,107 +11,105 @@ class DocumentProcessorError(Exception):
         super().__init__(self.message)
 
 
-# 파일 관련 예외들
 class FileError(DocumentProcessorError):
-    """파일 관련 기본 예외"""
+    """Base Exception of Files"""
     pass
 
 
 class FileSizeError(FileError):
-    """파일 크기 제한 초과"""
+    """File Size Exceeded the Limit"""
     pass
 
 
 class FileTypeError(FileError):
-    """지원하지 않는 파일 형식"""
+    """Not Supported File Type"""
     pass
 
 
 class FileAccessError(FileError):
-    """파일 접근 권한 오류"""
+    """File Access Authorization Error"""
     pass
 
 
 class EncodingError(FileError):
-    """파일 인코딩 감지/처리 실패"""
+    """Failed to Encode File"""
     pass
 
 
-# CSV 관련 예외들
+# CSV Exceptions
 class CSVError(DocumentProcessorError):
-    """CSV 처리 기본 예외"""
+    """Base Exceptions of CSV Processor"""
     pass
 
 
 class CSVParsingError(CSVError):
-    """CSV 파싱 오류"""
+    """CSV Parsing Error"""
     pass
 
 
 class CSVColumnError(CSVError):
-    """CSV 컬럼 관련 오류"""
+    """CSV Column Error"""
     pass
 
 
-# OCR 관련 예외들
+# OCR Exceptions
 class OCRError(DocumentProcessorError):
-    """OCR 처리 기본 예외"""
+    """Base Exceptions of OCR Processor"""
     pass
 
 
 class APIKeyError(OCRError):
-    """API 키 관련 오류"""
+    """API Key Error"""
     pass
 
 
 class ProcessingError(OCRError):
-    """문서 처리 오류"""
+    """Document Processing Error"""
     pass
 
 
 class ValidationError(DocumentProcessorError):
-    """데이터 검증 오류"""
+    """Data Validation Error"""
     pass
 
 
-# PDF 관련 예외들
 class PDFError(DocumentProcessorError):
-    """PDF 처리 기본 예외"""
+    """Base Exceptions of PDF Processor"""
     pass
 
 
 class PDFEncryptedError(PDFError):
-    """암호화된 PDF 오류"""
+    """Encrypted PDF Error"""
     pass
 
 
 class PDFCorruptedError(PDFError):
-    """손상된 PDF 오류"""
+    """Corrupted PDF Error"""
     pass
 
 
-# 네트워크 관련 예외들
+# Network Error
 class NetworkError(DocumentProcessorError):
-    """네트워크 관련 오류"""
+    """Network Error"""
     pass
 
 
 class TimeoutError(NetworkError):
-    """처리 시간 초과"""
+    """Timeout Error"""
     pass
 
 
 class APIError(NetworkError):
-    """외부 API 호출 오류"""
+    """API Call Error"""
     pass
 
 
-# 설정 관련 예외들
+# Configuration Error
 class ConfigurationError(DocumentProcessorError):
-    """설정 관련 오류"""
+    """Configuration Error"""
     pass
 
 
 class MissingDependencyError(DocumentProcessorError):
-    """필수 의존성 누락"""
+    """Missing Needed Dependency"""
     pass
