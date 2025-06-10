@@ -60,7 +60,7 @@ class UniversalFileReaderMCP:
             logger.error(f"Unexpected error: {e}")
             return {
                 "success": False,
-                "error": f"예상치 못한 오류: {str(e)}",
+                "error": f"Unexpected Error: {str(e)}",
                 "error_type": "UnexpectedError",
                 "file_path": file_path
             }
@@ -85,29 +85,29 @@ async def list_tools() -> List[Tool]:
     return [
         Tool(
             name="read_file",
-            description="PDF, CSV, 이미지 파일에서 텍스트, 표, 그래프 등을 추출합니다.",
+            description="Extracts text, tables, and graphics from PDF, CSV, and image files.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "처리할 파일의 경로"
+                        "description": "Path to the file to process"
                     },
                     "output_format": {
                         "type": "string",
                         "enum": ["markdown", "html", "structured"],
                         "default": "markdown",
-                        "description": "출력 형식"
+                        "description": "Output format"
                     },
                     "force_processor": {
                         "type": "string",
                         "enum": ["csv", "pdf", "ocr"],
-                        "description": "강제로 사용할 프로세서 (선택사항)"
+                        "description": "Force use of specific processor (optional)"
                     },
                     "user_language": {
                         "type": "string",
                         "default": "auto",
-                        "description": "OCR 처리 시 언어 설정 (ko, en, ja, zh, auto 등)"
+                        "description": "Language setting for OCR processing (ko, en, ja, zh, auto, etc.)"
                     }
                 },
                 "required": ["file_path"]
@@ -115,7 +115,7 @@ async def list_tools() -> List[Tool]:
         ),
         Tool(
             name="get_supported_formats",
-            description="지원하는 파일 형식과 프로세서 정보를 반환합니다.",
+            description="Returns supported file formats and processor information.",
             inputSchema={
                 "type": "object",
                 "properties": {},
@@ -162,31 +162,31 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     "processing_time": result.get("processing_time", 0)
                 }
                 
-                response_text = f"{content}\n\n---\n\n**처리 정보:**\n```json\n{json.dumps(metadata, ensure_ascii=False, indent=2)}\n```"
+                response_text = f"{content}\n\n---\n\n**Processing Information:**\n```json\n{json.dumps(metadata, ensure_ascii=False, indent=2)}\n```"
                 
                 return [TextContent(type="text", text=response_text)]
             else:
                 error_info = {
-                    "error": result.get("error", "알 수 없는 오류"),
+                    "error": result.get("error", "Unknown error"),
                     "error_type": result.get("error_type", "Unknown"),
                     "file_path": result.get("file_path", "")
                 }
-                error_text = f"**파일 처리 실패**\n\n```json\n{json.dumps(error_info, ensure_ascii=False, indent=2)}\n```"
+                error_text = f"**File Processing Failed**\n\n```json\n{json.dumps(error_info, ensure_ascii=False, indent=2)}\n```"
                 return [TextContent(type="text", text=error_text)]
         
         elif name == "get_supported_formats":
             server_info = mcp_server.get_server_info()
-            info_text = f"""# Universal File Reader 정보
+            info_text = f"""# Universal File Reader Information
 
-## 지원 파일 형식
+## Supported File Formats
 {', '.join(server_info['processor_info']['supported_extensions'])}
 
-## 프로세서 타입
-- **CSV**: CSV, TSV 파일 처리 (구조 분석, 통계, 청킹)
-- **PDF**: PDF 네이티브 텍스트 추출 (메타데이터 포함)
-- **OCR**: 이미지 및 스캔된 문서의 OCR 처리 (다중 요소 감지)
+## Processor Types
+- **CSV**: CSV, TSV file processing (structure analysis, statistics, chunking)
+- **PDF**: PDF native text extraction (with metadata)
+- **OCR**: OCR processing for images and scanned documents (multi-element detection)
 
-## 설정
+## Configuration
 ```json
 {json.dumps(server_info['processor_info']['config'], ensure_ascii=False, indent=2)}
 ```
@@ -225,10 +225,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             
             validation_text = f"""# File validation result
 
-## 전체 검증 결과
-{'✅ 처리 가능' if validation_info['overall_valid'] else '❌ 처리 불가능'}
+## Overall Validation Result
+{'✅ Can be processed' if validation_info['overall_valid'] else '❌ Cannot be processed'}
 
-## 상세 정보
+## Detailed Information
 ```json
 {json.dumps(validation_info, ensure_ascii=False, indent=2)}
 ```
@@ -236,11 +236,11 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return [TextContent(type="text", text=validation_text)]
         
         else:
-            return [TextContent(type="text", text=f"알 수 없는 도구: {name}")]
+            return [TextContent(type="text", text=f"Unknown tool: {name}")]
     
     except Exception as e:
-        logger.error(f"도구 호출 오류: {e}")
-        error_text = f"**도구 호출 오류**\n\n오류: {str(e)}\n도구: {name}\n인수: {json.dumps(arguments, ensure_ascii=False, indent=2)}"
+        logger.error(f"Tool call error: {e}")
+        error_text = f"**Tool Call Error**\n\nError: {str(e)}\nTool: {name}\nArguments: {json.dumps(arguments, ensure_ascii=False, indent=2)}"
         return [TextContent(type="text", text=error_text)]
 
 

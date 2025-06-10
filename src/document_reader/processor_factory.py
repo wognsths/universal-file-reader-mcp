@@ -107,11 +107,11 @@ class ProcessorFactory:
                     
                     # Use PDF processor if enough text is found
                     if word_count >= self.config.pdf_config.MIN_TEXT_THRESHOLD:
-                        logger.info(f"PDF 프로세서 선택: {word_count}개 단어 감지")
+                        logger.info(f"PDF processor selected: {word_count} words detected")
                         return 'pdf'
             
             # Fallback to OCR processor if text is insufficient
-            logger.info("OCR 프로세서 선택: 텍스트 부족으로 OCR 필요")
+            logger.info("OCR processor selected: OCR needed due to insufficient text")
             return 'ocr'
             
         except Exception as e:
@@ -121,7 +121,7 @@ class ProcessorFactory:
     def _create_processor(self, processor_type: str) -> BaseProcessor:
         """Instantiate a processor."""
         if processor_type not in self._processor_types:
-            raise ConfigurationError(f"알 수 없는 프로세서 타입: {processor_type}")
+            raise ConfigurationError(f"Unknown processor type: {processor_type}")
         
         processor_class = self._processor_types[processor_type]
         
@@ -138,7 +138,7 @@ class ProcessorFactory:
                 
         except Exception as e:
             logger.error(f"Failed to create {processor_type} processor: {e}")
-            raise ConfigurationError(f"프로세서 생성 실패: {e}")
+            raise ConfigurationError(f"Processor creation failed: {e}")
     
     def process_file(self, file_path: str, output_format: str = "markdown", 
                     force_processor: Optional[str] = None, **kwargs) -> Dict[str, Any]:
@@ -165,7 +165,7 @@ class ProcessorFactory:
             )
             
             if not validation_result["is_valid"]:
-                raise FileTypeError(f"파일 검증 실패: {', '.join(validation_result['errors'])}")
+                raise FileTypeError(f"File validation failed: {', '.join(validation_result['errors'])}")
             
             # Process file
             result = processor.process(file_path, output_format, **kwargs)
