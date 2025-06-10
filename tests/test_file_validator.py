@@ -20,7 +20,7 @@ def test_validate_file_basic_nonexistent(tmp_path):
     path = tmp_path / "missing.txt"
     result = FileValidator.validate_file_basic(str(path))
     assert not result["is_valid"]
-    assert "파일이 존재하지 않습니다" in result["errors"][0]
+    assert "File does not exist" in result["errors"][0]
 
 
 def test_validate_file_basic_unreadable(tmp_path):
@@ -36,4 +36,4 @@ def test_validate_file_basic_unreadable(tmp_path):
         os.access = original_access
         path.chmod(0o644)
     assert not result["is_valid"]
-    assert "파일 읽기 권한이 없습니다" in result["errors"][0]
+    assert "File read permission denied" in result["errors"][0]

@@ -29,7 +29,7 @@ class PDFProcessor(BaseProcessor):
         start_time = time.time()
         
         try:
-            # Enhanced validation (검색 결과 [8] 참고)
+            # Enhanced validation
             validation_error = self._validate_pdf_file(file_path)
             if validation_error:
                 return self._create_error_response(validation_error, file_path)
@@ -72,7 +72,7 @@ class PDFProcessor(BaseProcessor):
             return self._create_error_response(f"PDF processing failed: {str(e)}", file_path)
 
     def _validate_pdf_file(self, file_path: str) -> Optional[str]:
-        """Enhanced PDF file validation (검색 결과 [8] 방식)"""
+        """Enhanced PDF file validation"""
         if not self.validate_file(file_path):
             return "File validation failed"
         
@@ -107,7 +107,6 @@ class PDFProcessor(BaseProcessor):
                 'metadata': {}
             }
             
-            # 검색 결과 [9] 방식 참고
             with fitz.open(file_path) as doc:
                 result['page_count'] = len(doc)
                 
@@ -126,7 +125,6 @@ class PDFProcessor(BaseProcessor):
                 for page_num in range(len(doc)):
                     page = doc[page_num]
                     
-                    # 검색 결과 [7] None 처리 방식 적용
                     page_text = self._extract_page_text_safe(page, page_num)
                     
                     if page_text is None or not page_text.strip():
@@ -135,7 +133,7 @@ class PDFProcessor(BaseProcessor):
                     
                     text_parts.append(f"\n\n--- Page {page_num + 1} ---\n{page_text}")
                 
-                # Combine all text (검색 결과 [9] 패턴)
+                # Combine all text
                 result['text_content'] = ''.join(text_parts)
                 result['word_count'] = len(result['text_content'].split())
                 
@@ -166,12 +164,10 @@ class PDFProcessor(BaseProcessor):
             }
 
     def _extract_page_text_safe(self, page, page_num: int) -> Optional[str]:
-        """Safe page text extraction (검색 결과 [5], [7] 참고)"""
+        """Safe page text extraction"""
         try:
-            # 기본 텍스트 추출
             text = page.get_text()
             
-            # 검색 결과 [7] None 체크
             if text is None:
                 logger.warning(f"Page {page_num + 1}: get_text() returned None")
                 return None

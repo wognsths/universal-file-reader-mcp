@@ -57,7 +57,7 @@ class FileValidator:
             
             if not validation_result["file_info"]["is_readable"]:
                 validation_result["is_valid"] = False
-                validation_result["errors"].append("No authorization to read file")
+                validation_result["errors"].append("File read permission denied")
             
             return validation_result
             
@@ -116,7 +116,7 @@ class FileValidator:
         if not cls.validate_file_size(file_path, max_size_mb):
             result["is_valid"] = False
             result["errors"].append(
-                f"파일 크기가 너무 큽니다: {result['file_info']['size_mb']:.1f}MB > {max_size_mb}MB"
+                f"File size exceeded limit: {result['file_info']['size_mb']:.1f}MB > {max_size_mb}MB"
             )
         
         file_type_info = cls.detect_file_type(file_path)
