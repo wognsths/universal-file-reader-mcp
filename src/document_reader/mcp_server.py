@@ -244,10 +244,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         return [TextContent(type="text", text=error_text)]
 
 
-async def main():
-    """Start the MCP server."""
+async def _main() -> None:
+    """Asynchronous entry point for starting the MCP server."""
     logger.info("Universal File Reader MCP server starting")
-    
+
     async with stdio_server() as streams:
         await app.run(
             streams[0], streams[1],
@@ -255,5 +255,10 @@ async def main():
         )
 
 
+def main() -> None:
+    """Run the asynchronous server using ``asyncio.run``."""
+    asyncio.run(_main())
+
+
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    main()
