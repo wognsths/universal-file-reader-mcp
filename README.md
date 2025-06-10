@@ -1,16 +1,6 @@
-# universal-file-reader-mcp
-MCP server that converts data to machine-readable format
-
-## Running Tests
-
-Install dependencies and run the test suite using [pytest](https://pytest.org):
-
-```bash
-pytest
-=======
 # Universal File Reader MCP
 
-This project provides an MCP server capable of extracting information from PDF, CSV and image files. The server automatically selects the best processor for each file and can fall back to OCR when needed.
+Universal File Reader is an MCP server for extracting text and structural information from PDF, CSV and image files. The server automatically selects the appropriate processor and can fall back to OCR when needed.
 
 ## Installation
 
@@ -18,25 +8,28 @@ This project provides an MCP server capable of extracting information from PDF, 
 pip install -e .
 ```
 
-## Usage
-
-Run the MCP server using the provided console script:
+## Running the server
 
 ```bash
 universal-file-reader
 ```
 
-The server exposes tools for reading files and validating them. See `src/document_reader/mcp_server.py` for details.
+The server exposes three tools: `read_file`, `get_supported_formats` and `validate_file`. See `src/document_reader/mcp_server.py` for detailed schemas.
 
-## Environment
+## Environment variables
 
-Some processors require additional configuration:
+- `GOOGLE_API_KEY` – API key used for Gemini based OCR processing.
 
-- `GOOGLE_API_KEY` – API key for Gemini based OCR.
+## Running tests
+
+Install dependencies and run the test suite:
+
+```bash
+pip install -r requirements.txt
+pytest
+```
 
 ## Development
-
-Install development dependencies and run lint checks:
 
 ```bash
 pip install -e .[development]
