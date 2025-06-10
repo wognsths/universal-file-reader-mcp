@@ -14,6 +14,17 @@ pip install -e .
 universal-file-reader
 ```
 
+### Running over SSH
+
+You can also run the server on a remote machine via SSH:
+
+```bash
+ssh user@remote-host universal-file-reader
+```
+
+In Google’s ADK this command can be used with `ToolSubprocess` to
+communicate with the remote server.
+
 The server exposes three tools: `read_file`, `get_supported_formats` and `validate_file`. See `src/document_reader/mcp_server.py` for detailed schemas.
 
 ## Environment variables
