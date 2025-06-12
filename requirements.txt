@@ -27,6 +27,7 @@ pydantic>=2.5.0
 
 # Logging
 structlog>=23.0.0
+python-dotenv>=1.0.0
 
 # Development dependencies (optional)
 pytest>=7.4.0
