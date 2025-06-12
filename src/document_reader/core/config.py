@@ -87,6 +87,9 @@ class ProcessorConfig:
         if max_page_per_proc := os.getenv('MAX_PAGE_PER_PROCESS'):
             config.ocr_config.MAX_PAGE_PER_PROCESS = int(max_page_per_proc)
 
+        if timeout := os.getenv('TIMEOUT_SECONDS'):
+            config.global_config.TIMEOUT_SECONDS = int(timeout)
+
         return config
     
     def get_max_file_size(self, processor_type: str) -> float:

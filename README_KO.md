@@ -31,6 +31,7 @@ Google ADK에서는 위 명령을 `ToolSubprocess`에 지정해 원격 서버와
 
 - `GOOGLE_API_KEY` – Gemini 기반 OCR 사용을 위한 API 키
 - `MAX_PAGE_PER_PROCESS` – PDF OCR 시 한 번에 처리할 최대 페이지 수
+- `TIMEOUT_SECONDS` – PDF 처리 타임아웃(초)
 
 ## 테스트 실행
 

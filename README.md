@@ -31,6 +31,7 @@ The server exposes three tools: `read_file`, `get_supported_formats` and `valida
 
 - `GOOGLE_API_KEY` – API key used for Gemini based OCR processing.
 - `MAX_PAGE_PER_PROCESS` – Maximum number of PDF pages processed in one OCR batch.
+- `TIMEOUT_SECONDS` – Processing timeout in seconds for PDF tasks.
 
 ## Running tests
 
