@@ -3,6 +3,14 @@
 import asyncio
 from typing import Dict, Any, Optional, List
 import json
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env")
+except Exception:  # noqa: BLE001
+    pass
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
