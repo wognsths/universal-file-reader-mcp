@@ -19,3 +19,9 @@ def test_max_page_per_process_env(monkeypatch):
     monkeypatch.setenv("MAX_PAGE_PER_PROCESS", "3")
     config = ProcessorConfig.from_env()
     assert config.ocr_config.MAX_PAGE_PER_PROCESS == 3
+
+
+def test_timeout_seconds_env(monkeypatch):
+    monkeypatch.setenv("TIMEOUT_SECONDS", "300")
+    config = ProcessorConfig.from_env()
+    assert config.global_config.TIMEOUT_SECONDS == 300
