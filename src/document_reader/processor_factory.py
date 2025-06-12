@@ -2,7 +2,6 @@
 
 from typing import Dict, Type, Optional, List, Any
 from pathlib import Path
-import logging
 import fitz
 
 from .processors.base_processor import BaseProcessor

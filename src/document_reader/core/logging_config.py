@@ -72,7 +72,7 @@ def setup_logging(
             "class": "logging.StreamHandler",
             "level": log_level,
             "formatter": "json" if enable_json else "standard",
-            "stream": sys.stdout,
+            "stream": sys.stderr,
             "filters": ["processor_filter"]
         }
     

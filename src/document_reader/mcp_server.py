@@ -25,7 +25,21 @@ class UniversalFileReaderMCP:
     
     def __init__(self, config: Optional[ProcessorConfig] = None):
         self.factory = ProcessorFactory(config)
+        self.initialized = False
         logger.info("Universal File Reader MCP server initialised")
+
+    async def initialize(self) -> None:
+        """Perform initialization tasks before serving requests."""
+        # Pre-instantiate processors so that first request is handled promptly
+        for proc_type in ["csv", "pdf", "ocr"]:
+            try:
+                self.factory._create_processor(proc_type)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "Failed to pre-initialize %s processor: %s", proc_type, exc
+                )
+        self.initialized = True
+        logger.info("Universal File Reader MCP server ready")
     
     async def read_file(
         self,
@@ -247,6 +261,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 async def _main() -> None:
     """Asynchronous entry point for starting the MCP server."""
     logger.info("Universal File Reader MCP server starting")
+
+    await mcp_server.initialize()
 
     async with stdio_server() as streams:
         await app.run(
