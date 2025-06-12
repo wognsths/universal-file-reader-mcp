@@ -27,8 +27,12 @@ class PDFProcessor(BaseProcessor):
     def process(self, file_path: str, output_format: str = "markdown") -> Dict[str, Any]:
         """Process PDF with native text extraction only"""
         start_time = time.time()
-        
+
         try:
+            logger.debug(
+                "Starting PDF processing",
+                extra={"file_path": file_path, "output_format": output_format},
+            )
             # Enhanced validation
             validation_error = self._validate_pdf_file(file_path)
             if validation_error:
@@ -57,7 +61,12 @@ class PDFProcessor(BaseProcessor):
                     "processing_time": processing_time
                 }
             )
-            
+
+            logger.debug(
+                "Returning PDF processing result",
+                extra={"file_path": file_path, "processing_time": processing_time},
+            )
+
             return self._create_success_response(
                 formatted_content,
                 file_path,
@@ -98,6 +107,7 @@ class PDFProcessor(BaseProcessor):
     def _extract_text_safe(self, file_path: str) -> Dict[str, Any]:
         """Safe text extraction with comprehensive error handling"""
         try:
+            logger.debug("Opening PDF", extra={"file_path": file_path})
             result = {
                 'success': False,
                 'text_content': '',
@@ -124,7 +134,12 @@ class PDFProcessor(BaseProcessor):
                 
                 for page_num in range(len(doc)):
                     page = doc[page_num]
-                    
+
+                    logger.debug(
+                        "Extracting page text",
+                        extra={"file_path": file_path, "page": page_num + 1},
+                    )
+
                     page_text = self._extract_page_text_safe(page, page_num)
                     
                     if page_text is None or not page_text.strip():
@@ -150,6 +165,14 @@ class PDFProcessor(BaseProcessor):
                     )
                 
                 result['success'] = True
+                logger.debug(
+                    "Completed text extraction",
+                    extra={
+                        "file_path": file_path,
+                        "page_count": result['page_count'],
+                        "word_count": result['word_count'],
+                    },
+                )
                 return result
                 
         except fitz.FileDataError as e:
