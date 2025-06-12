@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 import sys
 import types
 import pytest
