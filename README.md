@@ -30,6 +30,7 @@ The server exposes three tools: `read_file`, `get_supported_formats` and `valida
 ## Environment variables
 
 - `GOOGLE_API_KEY` – API key used for Gemini based OCR processing.
+- `MAX_PAGE_PER_PROCESS` – Maximum number of PDF pages processed in one OCR batch.
 
 ## Running tests
 

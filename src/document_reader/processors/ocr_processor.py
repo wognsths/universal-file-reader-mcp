@@ -591,31 +591,53 @@ class OCRProcessor(BaseProcessor):
         """Async PDF processing with parallel page handling"""
         try:
             from pdf2image import convert_from_path
-            
-            # Convert PDF pages in executor
-            images = await asyncio.get_event_loop().run_in_executor(
-                self.executor,
-                lambda: convert_from_path(
-                    pdf_path, 
-                    dpi=self._calculate_optimal_dpi(pdf_path),
-                    first_page=1, 
-                    last_page=self.config.MAX_PAGES
+            import fitz
+
+            with fitz.open(pdf_path) as doc:
+                total_pages = len(doc)
+
+            max_pages = min(total_pages, self.config.MAX_PAGES)
+            semaphore = asyncio.Semaphore(3)
+            page_results = []
+            current_page = 1
+
+            while current_page <= max_pages:
+                end_page = min(
+                    current_page + self.config.MAX_PAGE_PER_PROCESS - 1,
+                    max_pages,
                 )
-            )
-            
-            # Process pages in parallel (limited concurrency)
-            semaphore = asyncio.Semaphore(3)  # Limit concurrent API calls
-            
-            async def process_page(page_num, image):
-                async with semaphore:
-                    return await self._process_image_async_internal(image, user_language, page_num)
-            
-            page_results = await asyncio.gather(
-                *[process_page(i, img) for i, img in enumerate(images)],
-                return_exceptions=True
-            )
-            
-            # Merge results
+
+                images = await asyncio.get_event_loop().run_in_executor(
+                    self.executor,
+                    lambda s=current_page, e=end_page: convert_from_path(
+                        pdf_path,
+                        dpi=self._calculate_optimal_dpi(pdf_path),
+                        first_page=s,
+                        last_page=e,
+                    ),
+                )
+
+                async def process_page(page_num, image):
+                    async with semaphore:
+                        return await self._process_image_async_internal(
+                            image,
+                            user_language,
+                            page_num,
+                        )
+
+                chunk_results = await asyncio.gather(
+                    *[
+                        process_page(page_no - 1, img)
+                        for page_no, img in zip(
+                            range(current_page, end_page + 1), images
+                        )
+                    ],
+                    return_exceptions=True,
+                )
+
+                page_results.extend(chunk_results)
+                current_page = end_page + 1
+
             return self._merge_page_results(page_results)
             
         except Exception as e:
