@@ -5,10 +5,12 @@ import types
 import pytest
 
 # Stub mcp package modules required by package imports
-mcp = types.ModuleType('mcp')
-server_mod = types.ModuleType('mcp.server')
-stdio_mod = types.ModuleType('mcp.server.stdio')
-types_mod = types.ModuleType('mcp.types')
+mcp = types.ModuleType("mcp")
+server_mod = types.ModuleType("mcp.server")
+stdio_mod = types.ModuleType("mcp.server.stdio")
+types_mod = types.ModuleType("mcp.types")
+
+
 class DummyServer:
     def __init__(self, *args, **kwargs):
         pass
@@ -16,15 +18,18 @@ class DummyServer:
     def list_tools(self):
         def decorator(func):
             return func
+
         return decorator
 
     def call_tool(self):
         def decorator(func):
             return func
+
         return decorator
 
+
 # Provide dummy API objects for mcp.types
-for name in ['Tool', 'TextContent', 'ImageContent', 'EmbeddedResource']:
+for name in ["Tool", "TextContent", "ImageContent", "EmbeddedResource"]:
     setattr(types_mod, name, object)
 
 
@@ -32,19 +37,22 @@ def dummy_stdio_server():
     class DummyContext:
         async def __aenter__(self):
             return None
+
         async def __aexit__(self, exc_type, exc, tb):
             pass
+
     return DummyContext()
+
 
 server_mod.Server = DummyServer
 server_mod.stdio = stdio_mod
 stdio_mod.stdio_server = dummy_stdio_server
 mcp.server = server_mod
 mcp.types = types_mod
-sys.modules.setdefault('mcp', mcp)
-sys.modules.setdefault('mcp.server', server_mod)
-sys.modules.setdefault('mcp.server.stdio', stdio_mod)
-sys.modules.setdefault('mcp.types', types_mod)
+sys.modules.setdefault("mcp", mcp)
+sys.modules.setdefault("mcp.server", server_mod)
+sys.modules.setdefault("mcp.server.stdio", stdio_mod)
+sys.modules.setdefault("mcp.types", types_mod)
 
 from src.document_reader import processor_factory
 from src.document_reader.processors import csv_processor, ocr_processor, pdf_processor
@@ -57,12 +65,17 @@ def mock_validators(monkeypatch):
 
     monkeypatch.setattr(
         validators.FileValidator,
-        'validate_file_basic',
-        lambda path: {"is_valid": True, "errors": [], "warnings": [], "file_info": {"is_readable": True}},
+        "validate_file_basic",
+        lambda path: {
+            "is_valid": True,
+            "errors": [],
+            "warnings": [],
+            "file_info": {"is_readable": True},
+        },
     )
     monkeypatch.setattr(
         validators.SecurityValidator,
-        'validate_security',
+        "validate_security",
         lambda path: {"is_safe": True, "security_warnings": []},
     )
 
@@ -70,8 +83,8 @@ def mock_validators(monkeypatch):
         def __init__(self, *args, **kwargs):
             pass
 
-    monkeypatch.setattr(ocr_processor, 'OCRProcessor', DummyOCRProcessor)
-    monkeypatch.setattr(processor_factory, 'OCRProcessor', DummyOCRProcessor)
+    monkeypatch.setattr(ocr_processor, "OCRProcessor", DummyOCRProcessor)
+    monkeypatch.setattr(processor_factory, "OCRProcessor", DummyOCRProcessor)
 
 
 def test_get_processor_csv(tmp_path):
@@ -129,9 +142,103 @@ def test_process_file_pdf_fallback(tmp_path, monkeypatch):
     monkeypatch.setattr(
         processor_factory.FileValidator,
         "validate_for_processor",
-        lambda *a, **k: {"is_valid": True, "errors": [], "warnings": [], "file_info": {"size_mb": 1}},
+        lambda *a, **k: {
+            "is_valid": True,
+            "errors": [],
+            "warnings": [],
+            "file_info": {"size_mb": 1},
+        },
     )
     factory._processor_types["pdf"] = DummyPDFProcessor
+    factory._processor_types["ocr"] = DummyOCRProcessor
+
+    result = factory.process_file(str(file_path))
+    assert result["success"] is True
+    assert result.get("fallback_to_ocr") is True
+
+
+def test_choose_pdf_processor_average(monkeypatch, tmp_path):
+    file_path = tmp_path / "math.pdf"
+    file_path.write_bytes(b"%PDF-1.4\n")
+
+    class DummyPage:
+        def __init__(self, text):
+            self._text = text
+
+        def get_text(self):
+            return self._text
+
+    class DummyDoc:
+        def __init__(self, texts):
+            self.texts = texts
+
+        def __len__(self):
+            return len(self.texts)
+
+        def __getitem__(self, idx):
+            return DummyPage(self.texts[idx])
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            pass
+
+    dummy_doc = DummyDoc(["few", "word " * 15, "text " * 20])
+
+    factory = processor_factory.ProcessorFactory()
+    monkeypatch.setattr(factory, "_create_processor", lambda t: None)
+    monkeypatch.setattr(
+        processor_factory, "fitz", types.SimpleNamespace(open=lambda p: dummy_doc)
+    )
+
+    assert factory._choose_pdf_processor(str(file_path)) == "pdf"
+
+
+def test_process_file_pdf_timeout(tmp_path, monkeypatch):
+    file_path = tmp_path / "slow.pdf"
+    file_path.write_bytes(b"%PDF-1.4\n")
+
+    class SlowPDFProcessor:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def process(self, *args, **kwargs):
+            import time
+
+            time.sleep(2)
+            return {"success": True, "content": "pdf", "word_count": 20}
+
+    SlowPDFProcessor.__name__ = "PDFProcessor"
+
+    class DummyOCRProcessor:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def process(self, *args, **kwargs):
+            return {"success": True, "content": "ocr"}
+
+    DummyOCRProcessor.__name__ = "OCRProcessor"
+
+    config = processor_factory.ProcessorConfig()
+    config.global_config.TIMEOUT_SECONDS = 1
+    factory = processor_factory.ProcessorFactory(config)
+
+    monkeypatch.setattr(factory, "_choose_pdf_processor", lambda p: "pdf")
+    monkeypatch.setattr(processor_factory, "PDFProcessor", SlowPDFProcessor)
+    monkeypatch.setattr(processor_factory, "OCRProcessor", DummyOCRProcessor)
+    monkeypatch.setattr(
+        processor_factory.FileValidator,
+        "validate_for_processor",
+        lambda *a, **k: {
+            "is_valid": True,
+            "errors": [],
+            "warnings": [],
+            "file_info": {"size_mb": 1},
+        },
+    )
+
+    factory._processor_types["pdf"] = SlowPDFProcessor
     factory._processor_types["ocr"] = DummyOCRProcessor
 
     result = factory.process_file(str(file_path))
