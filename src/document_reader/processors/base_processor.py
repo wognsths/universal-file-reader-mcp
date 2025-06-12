@@ -13,8 +13,16 @@ class BaseProcessor(ABC):
         logger.info(f"Initialized {self.name}")
 
     @abstractmethod
-    def process(self, file_path: str, output_format: str = "markdown") -> Dict[str, Any]:
-        """Process file and Returns Result"""
+    def process(
+        self, file_path: str, output_format: str = "markdown", **kwargs
+    ) -> Dict[str, Any]:
+        """Process file and return the result.
+
+        ``kwargs`` are ignored by processors that do not support additional
+        parameters.  This makes it safe to pass optional arguments (for
+        example ``user_language`` for the OCR processor) without raising a
+        ``TypeError``.
+        """
         pass
     
     @abstractmethod
