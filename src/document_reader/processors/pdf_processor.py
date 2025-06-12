@@ -24,8 +24,15 @@ class PDFProcessor(BaseProcessor):
     def get_supported_extensions(self) -> List[str]:
         return self._supported_extensions
     
-    def process(self, file_path: str, output_format: str = "markdown") -> Dict[str, Any]:
-        """Process PDF with native text extraction only"""
+    def process(
+        self, file_path: str, output_format: str = "markdown", **kwargs
+    ) -> Dict[str, Any]:
+        """Process PDF with native text extraction only.
+
+        ``kwargs`` are ignored so that callers can pass optional parameters
+        (e.g. ``user_language`` used by the OCR processor) without causing a
+        ``TypeError`` when this processor is selected.
+        """
         start_time = time.time()
 
         try:

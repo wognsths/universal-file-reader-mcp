@@ -71,7 +71,14 @@ class CSVProcessor(BaseProcessor):
     def get_supported_extensions(self) -> List[str]:  # noqa: D401
         return list(self._supported_extensions)
 
-    def process(self, file_path: str, output_format: str = "markdown") -> Dict[str, Any]:  # noqa: D401
+    def process(
+        self, file_path: str, output_format: str = "markdown", **kwargs
+    ) -> Dict[str, Any]:  # noqa: D401
+        """Process a CSV file.
+
+        Extra keyword arguments are accepted for API compatibility but ignored.
+        """
+
         start_time = time.time()
 
         try:

@@ -397,9 +397,18 @@ class OCRProcessor(BaseProcessor):
     def get_supported_extensions(self) -> List[str]:
         return self._supported_extensions
     
-    def process(self, file_path: str, output_format: str = "markdown", 
-                user_language: str = "auto") -> Dict[str, Any]:
-        """Synchronous wrapper for async processing"""
+    def process(
+        self,
+        file_path: str,
+        output_format: str = "markdown",
+        user_language: str = "auto",
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Synchronous wrapper for async processing.
+
+        ``kwargs`` are ignored to maintain API compatibility with other
+        processors.
+        """
         try:
             logger.info(
                 "Starting document processing", 
