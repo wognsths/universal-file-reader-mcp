@@ -15,4 +15,4 @@ COPY pyproject.toml .
 
 RUN pip install -e .
 
-CMD ["universal-file-reader"] 
+CMD ["universal-file-reader-api"]

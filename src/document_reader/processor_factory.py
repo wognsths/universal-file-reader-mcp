@@ -2,6 +2,7 @@
 
 from typing import Dict, Type, Optional, List, Any
 from pathlib import Path
+import concurrent.futures
 
 import fitz
 
@@ -195,9 +196,23 @@ class ProcessorFactory:
                     f"File validation failed: {', '.join(validation_result['errors'])}"
                 )
 
-            # Process file
+            # Process file with optional timeout
             logger.debug(f"About to call processor.process for {file_path}")
-            result = processor.process(file_path, output_format, **kwargs)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                future = ex.submit(processor.process, file_path, output_format, **kwargs)
+                try:
+                    result = future.result(timeout=self.config.global_config.TIMEOUT_SECONDS)
+                except concurrent.futures.TimeoutError:
+                    logger.warning(
+                        "Processing timeout, falling back to OCR",
+                        extra={"file_path": file_path},
+                    )
+                    if isinstance(processor, PDFProcessor) and self.config.pdf_config.USE_OCR_FALLBACK:
+                        ocr_proc = self.get_processor(file_path, "ocr")
+                        result = ocr_proc.process(file_path, output_format, **kwargs)
+                        result["fallback_to_ocr"] = True
+                    else:
+                        raise
             logger.debug(f"processor.process completed for {file_path}")
 
             # Fallback to OCR if PDF processing fails or text is insufficient
