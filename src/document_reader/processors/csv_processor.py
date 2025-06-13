@@ -1,10 +1,10 @@
 """CSV processor with chunking, size limits, and structured output
-Fixed version – addresses formatting bugs, HTML generation, and minor robustness tweaks."""
+Fixed version – addresses formatting bugs, HTML generation, and minor robustness tweaks.
+"""
 
 import logging
 import json
 import time
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -52,6 +52,7 @@ class CSVConfig:
                 "euc-kr",
             ]
 
+
 # ───────────────────────── Processor implementation ───────────────────────── #
 class CSVProcessor(BaseProcessor):
     """CSV file processor with size limits and chunking"""
@@ -61,8 +62,6 @@ class CSVProcessor(BaseProcessor):
     def __init__(self, config: Optional[CSVConfig] = None):
         super().__init__()
         self.config = config or CSVConfig()
-        # ThreadPool keeps CPU‑bound pandas work off the event‑loop
-        self._executor = ThreadPoolExecutor(max_workers=2)
 
     # ——— Public API ——— #
     def supports(self, file_extension: str) -> bool:  # noqa: D401
@@ -117,7 +116,9 @@ class CSVProcessor(BaseProcessor):
 
         size_mb = path.stat().st_size / (1024 * 1024)
         if size_mb > self.config.MAX_FILE_SIZE_MB:
-            raise FileSizeError(f"File too large: {size_mb:.1f} MB (limit {self.config.MAX_FILE_SIZE_MB} MB)")
+            raise FileSizeError(
+                f"File too large: {size_mb:.1f} MB (limit {self.config.MAX_FILE_SIZE_MB} MB)"
+            )
 
         if path.suffix.lower() not in self._supported_extensions:
             raise CSVError(f"Unsupported extension: {path.suffix}")
@@ -143,8 +144,7 @@ class CSVProcessor(BaseProcessor):
                 result = chardet.detect(sample)
                 return result.get("encoding") if result else None
 
-        future = self._executor.submit(_detect)
-        encoding = future.result(timeout=self.config.TIMEOUT_SECONDS)
+        encoding = _detect()
         if encoding and encoding.lower() in self.config.SUPPORTED_ENCODINGS:
             return encoding
         logger.warning(
@@ -154,7 +154,9 @@ class CSVProcessor(BaseProcessor):
         return "utf-8"
 
     # ——— Structure analysis ——— #
-    def _analyze_csv_structure(self, file_path: str, encoding: str) -> CSVAnalysis:  # noqa: D401
+    def _analyze_csv_structure(
+        self, file_path: str, encoding: str
+    ) -> CSVAnalysis:  # noqa: D401
         def _analyze() -> CSVAnalysis:  # noqa: D401
             sample_df = pd.read_csv(
                 file_path,
@@ -181,7 +183,10 @@ class CSVProcessor(BaseProcessor):
                         non_null_count=int(col_data.count()),
                         null_count=int(col_data.isnull().sum()),
                         unique_count=int(col_data.nunique()),
-                        sample_values=col_data.dropna().astype(str).unique()[:5].tolist(),
+                        sample_values=col_data.dropna()
+                        .astype(str)
+                        .unique()[:5]
+                        .tolist(),
                     )
                 )
 
@@ -201,8 +206,7 @@ class CSVProcessor(BaseProcessor):
                 processing_time=0.0,
             )
 
-        future = self._executor.submit(_analyze)
-        return future.result(timeout=self.config.TIMEOUT_SECONDS)
+        return _analyze()
 
     # ——— Chunk helpers ——— #
     def _detect_delimiter(self, first_line: str) -> str:  # noqa: D401
@@ -211,7 +215,9 @@ class CSVProcessor(BaseProcessor):
         best = max(counts, key=counts.get)
         return best if counts[best] else ","
 
-    def _process_small_csv(self, file_path: str, encoding: str, analysis: CSVAnalysis) -> CSVResult:  # noqa: D401
+    def _process_small_csv(
+        self, file_path: str, encoding: str, analysis: CSVAnalysis
+    ) -> CSVResult:  # noqa: D401
         def _process() -> CSVResult:
             df = pd.read_csv(file_path, encoding=encoding, low_memory=False)
             preview_df = df.head(self.config.MAX_ROWS_PREVIEW)
@@ -225,10 +231,11 @@ class CSVProcessor(BaseProcessor):
                 summary_stats=summary_stats,
             )
 
-        future = self._executor.submit(_process)
-        return future.result(timeout=self.config.TIMEOUT_SECONDS)
+        return _process()
 
-    def _process_large_csv(self, file_path: str, encoding: str, analysis: CSVAnalysis) -> CSVResult:  # noqa: D401
+    def _process_large_csv(
+        self, file_path: str, encoding: str, analysis: CSVAnalysis
+    ) -> CSVResult:  # noqa: D401
         def _process() -> CSVResult:
             chunks: List[CSVChunk] = []
             for chunk_id, chunk_df in enumerate(
@@ -239,7 +246,9 @@ class CSVProcessor(BaseProcessor):
                     low_memory=False,
                 )
             ):
-                start_row = chunk_id * self.config.CHUNK_SIZE + 1  # header counted separately
+                start_row = (
+                    chunk_id * self.config.CHUNK_SIZE + 1
+                )  # header counted separately
                 end_row = start_row + len(chunk_df) - 1
                 chunks.append(
                     CSVChunk(
@@ -281,11 +290,12 @@ class CSVProcessor(BaseProcessor):
                 warnings=warnings,
             )
 
-        future = self._executor.submit(_process)
-        return future.result(timeout=self.config.TIMEOUT_SECONDS)
+        return _process()
 
     # ——— Output formatting ——— #
-    def _format_as_markdown(self, result: CSVResult, file_path: str) -> str:  # noqa: D401
+    def _format_as_markdown(
+        self, result: CSVResult, file_path: str
+    ) -> str:  # noqa: D401
         analysis = result.analysis
         parts: List[str] = [
             f"# CSV Analysis Result: {Path(file_path).name}\n",
@@ -307,11 +317,22 @@ class CSVProcessor(BaseProcessor):
                 f"- **Sample values**: {', '.join(col.sample_values[:3])}\n",
             ]
 
-        type_summary = ", ".join(f"{t}: {c}" for t, c in analysis.data_types_summary.items()) or "(none)"
-        parts += ["## Data Types Summary", type_summary, "", "## Data Preview", result.preview_data]
+        type_summary = (
+            ", ".join(f"{t}: {c}" for t, c in analysis.data_types_summary.items())
+            or "(none)"
+        )
+        parts += [
+            "## Data Types Summary",
+            type_summary,
+            "",
+            "## Data Preview",
+            result.preview_data,
+        ]
 
         if result.chunks:
-            parts += [f"\n## Chunk Information (first {min(5, len(result.chunks))} shown)"]
+            parts += [
+                f"\n## Chunk Information (first {min(5, len(result.chunks))} shown)"
+            ]
             for chunk in result.chunks[:5]:
                 parts += [
                     f"### Chunk {chunk.chunk_id + 1}",
@@ -322,7 +343,12 @@ class CSVProcessor(BaseProcessor):
             parts += ["## Warnings", *[f"- {w}" for w in result.warnings]]
 
         if result.summary_stats:
-            parts += ["## Summary Statistics", "```json", json.dumps(result.summary_stats, indent=2, ensure_ascii=False), "```"]
+            parts += [
+                "## Summary Statistics",
+                "```json",
+                json.dumps(result.summary_stats, indent=2, ensure_ascii=False),
+                "```",
+            ]
 
         return "\n".join(parts)
 
@@ -330,44 +356,44 @@ class CSVProcessor(BaseProcessor):
         analysis = result.analysis
         html_parts: List[str] = [
             '<div class="csv-analysis-result">',
-            f'<h2>CSV Analysis: {Path(file_path).name}</h2>',
+            f"<h2>CSV Analysis: {Path(file_path).name}</h2>",
             '<div class="file-info">',
-            '<h3>File Information</h3>',
-            '<ul>',
-            f'<li><strong>File Size:</strong> {analysis.file_size_mb:.2f} MB</li>',
-            f'<li><strong>Encoding:</strong> {analysis.encoding}</li>',
-            f'<li><strong>Total Rows:</strong> {analysis.total_rows:,}</li>',
-            f'<li><strong>Total Columns:</strong> {analysis.total_columns}</li>',
-            f'<li><strong>Delimiter:</strong> <code>{analysis.delimiter}</code></li>',
-            f'<li><strong>Processing Time:</strong> {analysis.processing_time:.2f}s</li>',
-            '</ul>',
-            '</div>',  # file-info
+            "<h3>File Information</h3>",
+            "<ul>",
+            f"<li><strong>File Size:</strong> {analysis.file_size_mb:.2f} MB</li>",
+            f"<li><strong>Encoding:</strong> {analysis.encoding}</li>",
+            f"<li><strong>Total Rows:</strong> {analysis.total_rows:,}</li>",
+            f"<li><strong>Total Columns:</strong> {analysis.total_columns}</li>",
+            f"<li><strong>Delimiter:</strong> <code>{analysis.delimiter}</code></li>",
+            f"<li><strong>Processing Time:</strong> {analysis.processing_time:.2f}s</li>",
+            "</ul>",
+            "</div>",  # file-info
             '<div class="column-info">',
-            '<h3>Column Information</h3>',
+            "<h3>Column Information</h3>",
         ]
         for col in analysis.column_info:
             html_parts += [
                 '<div class="column">',
-                f'<h4>{col.name}</h4>',
-                f'<p><strong>Type:</strong> {col.dtype}</p>',
-                f'<p><strong>Non-null:</strong> {col.non_null_count:,} | <strong>Null:</strong> {col.null_count:,}</p>',
-                f'<p><strong>Unique values:</strong> {col.unique_count:,}</p>',
+                f"<h4>{col.name}</h4>",
+                f"<p><strong>Type:</strong> {col.dtype}</p>",
+                f"<p><strong>Non-null:</strong> {col.non_null_count:,} | <strong>Null:</strong> {col.null_count:,}</p>",
+                f"<p><strong>Unique values:</strong> {col.unique_count:,}</p>",
                 f'<p><strong>Sample values:</strong> {", ".join(col.sample_values[:3])}</p>',
-                '</div>',
+                "</div>",
             ]
-        html_parts += ['</div>']  # column-info
+        html_parts += ["</div>"]  # column-info
 
         html_parts += [
             '<div class="data-preview">',
-            '<h3>Data Preview</h3>',
-            f'<pre>{result.preview_data}</pre>',
-            '</div>',
+            "<h3>Data Preview</h3>",
+            f"<pre>{result.preview_data}</pre>",
+            "</div>",
         ]
 
         if result.warnings:
-            html_parts += ['<div class="warnings">', '<h3>Warnings</h3>', '<ul>']
-            html_parts += [f'<li>{w}</li>' for w in result.warnings]
-            html_parts += ['</ul>', '</div>']
+            html_parts += ['<div class="warnings">', "<h3>Warnings</h3>", "<ul>"]
+            html_parts += [f"<li>{w}</li>" for w in result.warnings]
+            html_parts += ["</ul>", "</div>"]
 
-        html_parts += ['</div>']  # csv-analysis-result
+        html_parts += ["</div>"]  # csv-analysis-result
         return "\n".join(html_parts)
