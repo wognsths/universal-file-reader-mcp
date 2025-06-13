@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from typing import Any, Dict, List
 import os
@@ -7,8 +8,8 @@ from pydantic import BaseModel, Field
 
 from .mcp_server import call_tool, mcp_server
 
-app = FastAPI()
 
+app = FastAPI()
 
 class MCPRequest(BaseModel):
     """Schema for MCP JSON requests."""
@@ -62,6 +63,7 @@ async def upload_file(file: UploadFile = File(...)) -> Dict[str, Any]:
             pass
 
     return {"results": [item.model_dump() for item in result]}
+
 
 
 def main() -> None:

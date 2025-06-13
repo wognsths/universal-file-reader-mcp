@@ -1,7 +1,9 @@
 # Universal File Reader MCP
 
 <p align="right">
-  <a href="README_KO.md">한국어</a>
+
+  <a href="README_KO.md">Korean</a>
+
 </p>
 
 Universal File Reader is an MCP server for extracting text and structural information from PDF, CSV and image files. The server automatically selects the appropriate processor and can fall back to OCR when needed.
