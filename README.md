@@ -52,6 +52,24 @@ docker-compose up
 
 The API will be available on <http://localhost:8000>.
 
+### MCP message format
+
+`POST /mcp` expects a JSON body with the following structure:
+
+```json
+{
+  "tool": "read_file",
+  "arguments": {
+    "file_path": "/path/to/file.pdf",
+    "output_format": "markdown"
+  }
+}
+```
+
+The `tool` field corresponds to one of the MCP tools (`read_file`,
+`get_supported_formats`, or `validate_file`). `arguments` contains the
+parameters for that tool.
+
 ## Environment variables
 
 - `GOOGLE_API_KEY` – API key used for Gemini based OCR processing.
