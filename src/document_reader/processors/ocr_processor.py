@@ -14,6 +14,7 @@ from PIL import Image
 from pydantic import BaseModel, Field, field_validator
 
 from .base_processor import BaseProcessor
+from ..core.utils import with_timeout
 
 from ..core.exceptions import (
     APIKeyError,
@@ -397,6 +398,7 @@ class OCRProcessor(BaseProcessor):
     def get_supported_extensions(self) -> List[str]:
         return self._supported_extensions
     
+    @with_timeout(60)
     def process(
         self,
         file_path: str,
@@ -411,7 +413,7 @@ class OCRProcessor(BaseProcessor):
         """
         try:
             logger.info(
-                "Starting document processing", 
+                "Starting document processing",
                 extra={
                     "file_path": file_path,
                     "file_size_mb": Path(file_path).stat().st_size / (1024 * 1024),
@@ -420,8 +422,13 @@ class OCRProcessor(BaseProcessor):
                     "processor_id": id(self)
                 }
             )
-            
-            result = asyncio.run(self.process_async(file_path, output_format, user_language))
+
+            future = self.executor.submit(
+                lambda: asyncio.run(
+                    self.process_async(file_path, output_format, user_language)
+                )
+            )
+            result = future.result(timeout=self.config.TIMEOUT_SECONDS)
             
             logger.info(
                 "Document processing completed",
