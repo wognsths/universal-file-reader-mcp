@@ -141,7 +141,7 @@ class MultiElementResult(BaseModel):
     @field_validator("layout_complexity")
     @classmethod
     def validate_complexity(cls, v):
-        valid_complexity = {"simple", "moderate", "complex"}
+        valid_complexity = {"simple", "moderate", "complex", "unknown"}
         if v not in valid_complexity:
             raise ValueError(f"Layout complexity must be one of {valid_complexity}")
         return v
@@ -488,9 +488,11 @@ class OCRProcessor(BaseProcessor):
                 self._generate_content = self._generate_openai
                 logger.info("OpenAI model configured successfully")
             else:
+
                 if not api_key:
                     raise APIKeyError("MODEL_API_KEY environment variable not set")
                 genai.configure(api_key=api_key)
+
                 self.model = genai.GenerativeModel(
                     model_name,
                     generation_config={
