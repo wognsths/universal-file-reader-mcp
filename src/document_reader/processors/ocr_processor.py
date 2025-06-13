@@ -475,7 +475,6 @@ class OCRProcessor(BaseProcessor):
         self.model_provider = "gemini"
         model_name = os.getenv("MODEL_NAME", self.config.MODEL_NAME)
         api_key = os.getenv("MODEL_API_KEY")
-        google_key = os.getenv("GOOGLE_API_KEY")
 
         try:
             if model_name.lower().startswith("gpt"):
@@ -489,10 +488,11 @@ class OCRProcessor(BaseProcessor):
                 self._generate_content = self._generate_openai
                 logger.info("OpenAI model configured successfully")
             else:
-                key = google_key or api_key
-                if not key:
-                    raise APIKeyError("GOOGLE_API_KEY environment variable not set")
-                genai.configure(api_key=key)
+
+                if not api_key:
+                    raise APIKeyError("MODEL_API_KEY environment variable not set")
+                genai.configure(api_key=api_key)
+
                 self.model = genai.GenerativeModel(
                     model_name,
                     generation_config={
