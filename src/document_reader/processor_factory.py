@@ -200,26 +200,30 @@ class ProcessorFactory:
                 isinstance(processor, PDFProcessor)
                 and self.config.pdf_config.USE_OCR_FALLBACK
             ):
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(
-                        processor.process, file_path, output_format, **kwargs
+                executor = ThreadPoolExecutor(max_workers=1)
+                future = executor.submit(
+                    processor.process, file_path, output_format, **kwargs
+                )
+                try:
+                    result = future.result(
+                        timeout=self.config.global_config.TIMEOUT_SECONDS
                     )
-                    try:
-                        result = future.result(
-                            timeout=self.config.global_config.TIMEOUT_SECONDS
-                        )
-                    except TimeoutError:
-                        logger.warning(
-                            "PDF processing timeout, falling back to OCR",
-                            extra={
-                                "file_path": file_path,
-                                "timeout": self.config.global_config.TIMEOUT_SECONDS,
-                            },
-                        )
-                        ocr_proc = self.get_processor(file_path, "ocr")
-                        processor = ocr_proc
-                        result = ocr_proc.process(file_path, output_format, **kwargs)
-                        result["fallback_to_ocr"] = True
+                except TimeoutError:
+                    logger.warning(
+                        "PDF processing timeout, falling back to OCR",
+                        extra={
+                            "file_path": file_path,
+                            "timeout": self.config.global_config.TIMEOUT_SECONDS,
+                        },
+                    )
+                    future.cancel()
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    ocr_proc = self.get_processor(file_path, "ocr")
+                    processor = ocr_proc
+                    result = ocr_proc.process(file_path, output_format, **kwargs)
+                    result["fallback_to_ocr"] = True
+                else:
+                    executor.shutdown(wait=True)
             else:
                 result = processor.process(file_path, output_format, **kwargs)
 
