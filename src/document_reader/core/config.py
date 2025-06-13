@@ -42,7 +42,7 @@ class OCRConfig:
     MIN_DPI: int = 150
     MAX_PAGES: int = 10
     MAX_PAGE_PER_PROCESS: int = 5
-    TIMEOUT_SECONDS: int = 60
+    TIMEOUT_SECONDS: int = 30
     COMPRESSION_QUALITY: int = 85
     SUPPORTED_LANGUAGES: Dict[str, str] = field(default_factory=lambda: {
         "ko": "Korean", "en": "English", "ja": "Japanese", 
@@ -79,7 +79,9 @@ class ProcessorConfig:
         if max_size := os.getenv('MAX_FILE_SIZE_MB'):
             config.global_config.MAX_FILE_SIZE_MB = float(max_size)
             
-        if ocr_model := os.getenv('OCR_MODEL_NAME'):
+        if model_name := os.getenv('MODEL_NAME'):
+            config.ocr_config.MODEL_NAME = model_name
+        elif ocr_model := os.getenv('OCR_MODEL_NAME'):
             config.ocr_config.MODEL_NAME = ocr_model
 
         if temp_dir := os.getenv('TEMP_DIR'):

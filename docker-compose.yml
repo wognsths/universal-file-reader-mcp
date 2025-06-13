@@ -9,5 +9,6 @@ services:
       - ./test_files:/app/test_files
       - ./output:/app/output
     environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - MODEL_API_KEY=${MODEL_API_KEY}
+      - MODEL_NAME=${MODEL_NAME}
       - LOG_LEVEL=INFO

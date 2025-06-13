@@ -75,7 +75,7 @@ class OCRConfig:
     MIN_DPI: int = 150
     MAX_FILE_SIZE_MB: int = 50
     MAX_PAGES: int = 10
-    TIMEOUT_SECONDS: int = 60
+    TIMEOUT_SECONDS: int = 30
     SUPPORTED_LANGUAGES: Dict[str, str] = None
     COMPRESSION_QUALITY: int = 85
 
@@ -399,8 +399,15 @@ class OCRProcessor(BaseProcessor):
     def __init__(self, config: Optional[OCRConfig] = None):
         super().__init__()
         self.config = config or OCRConfig()
-        self._supported_extensions = [".pdf", ".png", ".jpg", ".jpeg", ".bmp", ".tiff"]
-        self._setup_gemini()
+        self._supported_extensions = [
+            ".pdf",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".bmp",
+            ".tiff",
+        ]
+        self._setup_model()
 
     def supports(self, file_extension: str) -> bool:
         return file_extension.lower() in self._supported_extensions
@@ -461,39 +468,74 @@ class OCRProcessor(BaseProcessor):
             )
             return self._create_error_response(str(e), file_path)
 
-    def _setup_gemini(self):
-        """Setup Gemini API with enhanced error handling"""
+    def _setup_model(self):
+        """Configure OCR model based on environment variables"""
+        import os
+
+        self.model_provider = "gemini"
+        model_name = os.getenv("MODEL_NAME", self.config.MODEL_NAME)
+        api_key = os.getenv("MODEL_API_KEY")
+
         try:
-            import os
+            if model_name.lower().startswith("gpt"):
+                if not api_key:
+                    raise APIKeyError("MODEL_API_KEY environment variable not set")
+                import openai
 
-            api_key = os.getenv("GOOGLE_API_KEY")
+                self._openai_client = openai.OpenAI(api_key=api_key)
+                self.model_name = model_name
+                self.model_provider = "openai"
+                self._generate_content = self._generate_openai
+                logger.info("OpenAI model configured successfully")
+            else:
+                if not api_key:
+                    raise APIKeyError("MODEL_API_KEY environment variable not set")
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel(
+                    model_name,
+                    generation_config={
+                        "response_mime_type": "application/json",
+                        "max_output_tokens": 8192,
+                    },
+                )
+                self._generate_content = self._generate_gemini
+                logger.info("Gemini API configured successfully")
 
-            if not api_key:
-                raise APIKeyError("GOOGLE_API_KEY environment variable not set")
-
-            if not APIKeyValidator.validate_api_key_format(api_key):
-                raise APIKeyError("Invalid API key format")
-
-            if not APIKeyValidator.validate_google_api_key(api_key):
-                raise APIKeyError("API key validation failed")
-
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel(
-                self.config.MODEL_NAME,
-                generation_config={
-                    "response_mime_type": "application/json",
-                    "max_output_tokens": 8192,
-                },
-            )
-            self.gemini_available = True
-            logger.info("Gemini API configured successfully")
+            self.model_available = True
 
         except APIKeyError:
             raise
         except Exception as e:
-            logger.error(f"Gemini setup failed: {e}")
-            self.gemini_available = False
-            raise ProcessingError(f"Gemini setup failed: {e}")
+            logger.error(f"Model setup failed: {e}")
+            self.model_available = False
+            raise ProcessingError(f"Model setup failed: {e}")
+
+    def _generate_gemini(self, prompt, image):
+        return self.model.generate_content([prompt, image])
+
+    def _generate_openai(self, prompt, image):
+        import base64
+        import io
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        img_b64 = base64.b64encode(buffer.getvalue()).decode()
+        message = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}},
+                ],
+            }
+        ]
+        response = self._openai_client.chat.completions.create(
+            model=self.model_name,
+            messages=message,
+            response_format={"type": "json_object"},
+        )
+        text = response.choices[0].message.content
+        from types import SimpleNamespace
+        return SimpleNamespace(text=text)
 
     async def process_async(
         self,
@@ -510,8 +552,8 @@ class OCRProcessor(BaseProcessor):
             if not self._validate_file(file_path):
                 raise ProcessingError("File validation failed")
 
-            if not self.gemini_available:
-                raise ProcessingError("Gemini API not available")
+            if not self.model_available:
+                raise ProcessingError("OCR model not available")
 
             # Process document
             result = await self._detect_multiple_elements_async(
@@ -604,7 +646,7 @@ class OCRProcessor(BaseProcessor):
 
             # Process with timeout
             response = await asyncio.wait_for(
-                asyncio.to_thread(lambda: self.model.generate_content([prompt, image])),
+                asyncio.to_thread(lambda: self._generate_content(prompt, image)),
                 timeout=self.config.TIMEOUT_SECONDS,
             )
 
@@ -792,7 +834,7 @@ class OCRProcessor(BaseProcessor):
             # Process with API with timeout
             response = await asyncio.wait_for(
                 asyncio.to_thread(
-                    lambda: self.model.generate_content([prompt, optimized_image])
+                    lambda: self._generate_content(prompt, optimized_image)
                 ),
                 timeout=self.config.TIMEOUT_SECONDS,
             )

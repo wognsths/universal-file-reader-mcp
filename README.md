@@ -75,9 +75,11 @@ parameters for that tool.
 
 ## Environment variables
 
-- `GOOGLE_API_KEY` – API key used for Gemini based OCR processing.
+- `MODEL_NAME` – Vision capable model name (e.g. `gpt-4o`, `gemini-2.0-flash`)
+- `MODEL_API_KEY` – API key for the selected model
 - `MAX_PAGE_PER_PROCESS` – Maximum number of PDF pages processed in one OCR batch.
-- `TIMEOUT_SECONDS` – Processing timeout in seconds for PDF tasks.
+- `OCR_TIMEOUT_SECONDS` – Processing timeout in seconds per PDF page (default 30)
+- `TIMEOUT_SECONDS` – Global processing timeout
 
 ## Running tests
 
