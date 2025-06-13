@@ -42,6 +42,7 @@ class OCRConfig:
     MIN_DPI: int = 150
     MAX_PAGES: int = 10
     MAX_PAGE_PER_PROCESS: int = 5
+    TIMEOUT_SECONDS: int = 60
     COMPRESSION_QUALITY: int = 85
     SUPPORTED_LANGUAGES: Dict[str, str] = field(default_factory=lambda: {
         "ko": "Korean", "en": "English", "ja": "Japanese", 
@@ -89,6 +90,9 @@ class ProcessorConfig:
 
         if timeout := os.getenv('TIMEOUT_SECONDS'):
             config.global_config.TIMEOUT_SECONDS = int(timeout)
+
+        if ocr_timeout := os.getenv('OCR_TIMEOUT_SECONDS'):
+            config.ocr_config.TIMEOUT_SECONDS = int(ocr_timeout)
 
         return config
     

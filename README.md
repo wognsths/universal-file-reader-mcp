@@ -6,7 +6,7 @@
 
 </p>
 
-Universal File Reader is an MCP server for extracting text and structural information from PDF, CSV and image files. The server automatically selects the appropriate processor and can fall back to OCR when needed.
+Universal File Reader is an MCP server for extracting text and structural information from PDF, CSV, Excel and image files. The server automatically selects the appropriate processor and can fall back to OCR when needed.
 
 ## Installation
 
@@ -35,10 +35,11 @@ The server exposes three tools: `read_file`, `get_supported_formats` and `valida
 
 ## Running the API server
 
-You can also start a REST API that wraps the same functionality. The service exposes two endpoints:
+You can also start a REST API that wraps the same functionality. The service exposes three endpoints:
 
 - `POST /mcp` – accept MCP JSON messages
-- `POST /upload` – simple file upload
+- `POST /upload` – upload a file and receive the server path
+- `POST /test` – upload a file and process it with optional parameters
 
 Start the server locally:
 

@@ -13,6 +13,9 @@ pdf2image>=1.17.0
 # Image handling
 Pillow>=10.0.0
 
+# Excel support
+openpyxl>=3.1.2
+
 # OCR and AI
 google-generativeai>=0.3.0
 

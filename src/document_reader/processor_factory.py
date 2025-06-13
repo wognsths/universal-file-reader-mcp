@@ -10,6 +10,7 @@ from .processors.base_processor import BaseProcessor
 from .processors.csv_processor import CSVProcessor
 from .processors.pdf_processor import PDFProcessor
 from .processors.ocr_processor import OCRProcessor
+from .processors.excel_processor import ExcelProcessor
 
 from .core.config import ProcessorConfig
 from .core.validators import FileValidator, SecurityValidator
@@ -32,6 +33,7 @@ class ProcessorFactory:
             "csv": CSVProcessor,
             "pdf": PDFProcessor,
             "ocr": OCRProcessor,
+            "excel": ExcelProcessor,
         }
         self._extension_mapping = self._build_extension_mapping()
 
@@ -42,6 +44,10 @@ class ProcessorFactory:
         # CSV files
         for ext in [".csv", ".tsv"]:
             mapping[ext] = "csv"
+
+        # Excel files
+        for ext in [".xlsx", ".xls"]:
+            mapping[ext] = "excel"
 
         # PDF files - choose between OCR and PDF processor
         mapping[".pdf"] = "auto"  # choose automatically
