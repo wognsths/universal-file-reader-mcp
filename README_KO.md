@@ -1,5 +1,9 @@
 # Universal File Reader MCP
 
+<p align="right">
+  <a href="README.md">English</a>
+</p>
+
 Universal File Reader는 PDF, CSV, 이미지 파일에서 정보를 추출하는 MCP 서버입니다. 서버는 파일 형식에 맞는 프로세서를 자동으로 선택하며 필요 시 OCR을 사용합니다.
 
 ## 설치
