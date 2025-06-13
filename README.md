@@ -1,5 +1,9 @@
 # Universal File Reader MCP
 
+<p align="right">
+  <a href="README_KO.md">한국어</a>
+</p>
+
 Universal File Reader is an MCP server for extracting text and structural information from PDF, CSV and image files. The server automatically selects the appropriate processor and can fall back to OCR when needed.
 
 ## Installation
@@ -26,6 +30,27 @@ In Google’s ADK this command can be used with `ToolSubprocess` to
 communicate with the remote server.
 
 The server exposes three tools: `read_file`, `get_supported_formats` and `validate_file`. See `src/document_reader/mcp_server.py` for detailed schemas.
+
+## Running the API server
+
+You can also start a REST API that wraps the same functionality. The service exposes two endpoints:
+
+- `POST /mcp` – accept MCP JSON messages
+- `POST /upload` – simple file upload
+
+Start the server locally:
+
+```bash
+universal-file-reader-api
+```
+
+Using Docker Compose:
+
+```bash
+docker-compose up
+```
+
+The API will be available on <http://localhost:8000>.
 
 ## Environment variables
 
