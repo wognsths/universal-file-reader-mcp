@@ -1,7 +1,6 @@
 """CSV processor with chunking, size limits, and structured output
 Fixed version – addresses formatting bugs, HTML generation, and minor robustness tweaks."""
 
-import asyncio
 import logging
 import json
 import time
@@ -14,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from .base_processor import BaseProcessor
+from ..core.utils import with_timeout
 
 from ..core.exceptions import (
     CSVError,
@@ -71,6 +71,7 @@ class CSVProcessor(BaseProcessor):
     def get_supported_extensions(self) -> List[str]:  # noqa: D401
         return list(self._supported_extensions)
 
+    @with_timeout(30)
     def process(
         self, file_path: str, output_format: str = "markdown", **kwargs
     ) -> Dict[str, Any]:  # noqa: D401
@@ -85,7 +86,7 @@ class CSVProcessor(BaseProcessor):
             if not self._validate_file(file_path):
                 raise CSVError("File validation failed")
 
-            result: CSVResult = asyncio.run(self._process_csv_async(file_path))
+            result: CSVResult = self._process_csv(file_path)
             result.analysis.processing_time = time.time() - start_time
 
             # Render
@@ -123,16 +124,17 @@ class CSVProcessor(BaseProcessor):
 
         return True
 
-    async def _process_csv_async(self, file_path: str) -> CSVResult:  # noqa: D401
-        encoding = await self._detect_encoding_async(file_path)
-        analysis = await self._analyze_csv_structure_async(file_path, encoding)
+    def _process_csv(self, file_path: str) -> CSVResult:  # noqa: D401
+        """Process CSV file synchronously."""
+        encoding = self._detect_encoding(file_path)
+        analysis = self._analyze_csv_structure(file_path, encoding)
 
         if analysis.file_size_mb > 10:
-            return await self._process_large_csv_async(file_path, encoding, analysis)
-        return await self._process_small_csv_async(file_path, encoding, analysis)
+            return self._process_large_csv(file_path, encoding, analysis)
+        return self._process_small_csv(file_path, encoding, analysis)
 
     # ——— Encoding detection ——— #
-    async def _detect_encoding_async(self, file_path: str) -> str:  # noqa: D401
+    def _detect_encoding(self, file_path: str) -> str:  # noqa: D401
         import chardet
 
         def _detect() -> str | None:
@@ -141,14 +143,18 @@ class CSVProcessor(BaseProcessor):
                 result = chardet.detect(sample)
                 return result.get("encoding") if result else None
 
-        encoding = await asyncio.get_running_loop().run_in_executor(self._executor, _detect)
+        future = self._executor.submit(_detect)
+        encoding = future.result(timeout=self.config.TIMEOUT_SECONDS)
         if encoding and encoding.lower() in self.config.SUPPORTED_ENCODINGS:
             return encoding
-        logger.warning("Unsupported or undetected encoding '%s'. Falling back to utf‑8.", encoding)
+        logger.warning(
+            "Unsupported or undetected encoding '%s'. Falling back to utf‑8.",
+            encoding,
+        )
         return "utf-8"
 
     # ——— Structure analysis ——— #
-    async def _analyze_csv_structure_async(self, file_path: str, encoding: str) -> CSVAnalysis:  # noqa: D401
+    def _analyze_csv_structure(self, file_path: str, encoding: str) -> CSVAnalysis:  # noqa: D401
         def _analyze() -> CSVAnalysis:  # noqa: D401
             sample_df = pd.read_csv(
                 file_path,
@@ -195,7 +201,8 @@ class CSVProcessor(BaseProcessor):
                 processing_time=0.0,
             )
 
-        return await asyncio.get_running_loop().run_in_executor(self._executor, _analyze)
+        future = self._executor.submit(_analyze)
+        return future.result(timeout=self.config.TIMEOUT_SECONDS)
 
     # ——— Chunk helpers ——— #
     def _detect_delimiter(self, first_line: str) -> str:  # noqa: D401
@@ -204,21 +211,24 @@ class CSVProcessor(BaseProcessor):
         best = max(counts, key=counts.get)
         return best if counts[best] else ","
 
-    async def _process_small_csv_async(self, file_path: str, encoding: str, analysis: CSVAnalysis) -> CSVResult:  # noqa: D401
+    def _process_small_csv(self, file_path: str, encoding: str, analysis: CSVAnalysis) -> CSVResult:  # noqa: D401
         def _process() -> CSVResult:
             df = pd.read_csv(file_path, encoding=encoding, low_memory=False)
             preview_df = df.head(self.config.MAX_ROWS_PREVIEW)
             numeric_cols = df.select_dtypes(include=[np.number])
-            summary_stats = numeric_cols.describe().to_dict() if not numeric_cols.empty else {}
+            summary_stats = (
+                numeric_cols.describe().to_dict() if not numeric_cols.empty else {}
+            )
             return CSVResult(
                 analysis=analysis,
                 preview_data=preview_df.to_markdown(index=False),
                 summary_stats=summary_stats,
             )
 
-        return await asyncio.get_running_loop().run_in_executor(self._executor, _process)
+        future = self._executor.submit(_process)
+        return future.result(timeout=self.config.TIMEOUT_SECONDS)
 
-    async def _process_large_csv_async(self, file_path: str, encoding: str, analysis: CSVAnalysis) -> CSVResult:  # noqa: D401
+    def _process_large_csv(self, file_path: str, encoding: str, analysis: CSVAnalysis) -> CSVResult:  # noqa: D401
         def _process() -> CSVResult:
             chunks: List[CSVChunk] = []
             for chunk_id, chunk_df in enumerate(
@@ -271,7 +281,8 @@ class CSVProcessor(BaseProcessor):
                 warnings=warnings,
             )
 
-        return await asyncio.get_running_loop().run_in_executor(self._executor, _process)
+        future = self._executor.submit(_process)
+        return future.result(timeout=self.config.TIMEOUT_SECONDS)
 
     # ——— Output formatting ——— #
     def _format_as_markdown(self, result: CSVResult, file_path: str) -> str:  # noqa: D401

@@ -7,6 +7,7 @@ import time
 
 import fitz
 from .base_processor import BaseProcessor
+from ..core.utils import with_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class PDFProcessor(BaseProcessor):
     def get_supported_extensions(self) -> List[str]:
         return self._supported_extensions
     
+    @with_timeout(60)
     def process(
         self, file_path: str, output_format: str = "markdown", **kwargs
     ) -> Dict[str, Any]:
