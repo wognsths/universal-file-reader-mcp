@@ -1,13 +1,13 @@
 version: '3.8'
 
 services:
-  mcp-server:
+  mcp-api:
     build: .
+    ports:
+      - "8000:8000"
     volumes:
       - ./test_files:/app/test_files
       - ./output:/app/output
     environment:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - LOG_LEVEL=INFO
-    stdin_open: true
-    tty: true 
