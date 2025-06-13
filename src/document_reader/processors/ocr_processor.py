@@ -141,7 +141,7 @@ class MultiElementResult(BaseModel):
     @field_validator("layout_complexity")
     @classmethod
     def validate_complexity(cls, v):
-        valid_complexity = {"simple", "moderate", "complex"}
+        valid_complexity = {"simple", "moderate", "complex", "unknown"}
         if v not in valid_complexity:
             raise ValueError(f"Layout complexity must be one of {valid_complexity}")
         return v
