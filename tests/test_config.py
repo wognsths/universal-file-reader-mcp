@@ -25,3 +25,9 @@ def test_timeout_seconds_env(monkeypatch):
     monkeypatch.setenv("TIMEOUT_SECONDS", "300")
     config = ProcessorConfig.from_env()
     assert config.global_config.TIMEOUT_SECONDS == 300
+
+
+def test_model_name_env(monkeypatch):
+    monkeypatch.setenv("MODEL_NAME", "gpt-test")
+    config = ProcessorConfig.from_env()
+    assert config.ocr_config.MODEL_NAME == "gpt-test"

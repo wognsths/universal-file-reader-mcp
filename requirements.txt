@@ -18,6 +18,7 @@ openpyxl>=3.1.2
 
 # OCR and AI
 google-generativeai>=0.3.0
+openai>=1.12.0
 
 # File type detection
 python-magic>=0.4.27

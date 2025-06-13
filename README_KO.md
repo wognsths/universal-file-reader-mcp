@@ -63,9 +63,12 @@ API는 <http://localhost:8000> 에서 접근할 수 있습니다.
 
 ## 환경 변수
 
-- `GOOGLE_API_KEY` – Gemini 기반 OCR 사용을 위한 API 키
+- `MODEL_NAME` – 사용 모델 이름 (예: `gpt-4o`, `gemini-2.0-flash`)
+- `MODEL_API_KEY` – 선택한 모델의 API 키
+- `GOOGLE_API_KEY` – Gemini 사용 시 필요한 API 키
 - `MAX_PAGE_PER_PROCESS` – PDF OCR 시 한 번에 처리할 최대 페이지 수
-- `TIMEOUT_SECONDS` – PDF 처리 타임아웃(초)
+- `OCR_TIMEOUT_SECONDS` – PDF 페이지당 타임아웃(기본 30초)
+- `TIMEOUT_SECONDS` – 전역 처리 타임아웃
 
 ## 테스트 실행
 
