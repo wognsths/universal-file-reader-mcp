@@ -377,7 +377,8 @@ class PromptManager:
             "total_elements": 5,
             "element_summary": {{"text": 3, "table": 1, "graph": 1}},
             "reading_flow": [1, 2, 3, 4, 5],
-            "detected_language": "ko|en|ja|zh|auto"
+            "detected_language": "ko|en|ja|zh|auto",
+            "processing_time": 12.345
         }}
 
         Element Detection Criteria:
