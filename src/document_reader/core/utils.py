@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+
 import signal
 import asyncio
+
 from functools import wraps
 
 
@@ -22,15 +24,14 @@ def with_timeout(seconds: int):
 
             @wraps(func)
             def wrapper(*args, **kwargs):
-                def handler(signum, frame):
-                    raise TimeoutError(f"Processing timeout after {seconds} seconds")
-
-                signal.signal(signal.SIGALRM, handler)
-                signal.alarm(seconds)
-                try:
-                    return func(*args, **kwargs)
-                finally:
-                    signal.alarm(0)
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(func, *args, **kwargs)
+                    try:
+                        return future.result(timeout=seconds)
+                    except concurrent.futures.TimeoutError:
+                        raise TimeoutError(
+                            f"Processing timeout after {seconds} seconds"
+                        )
 
             return wrapper
 

@@ -126,9 +126,24 @@ class CSVProcessor(BaseProcessor):
         return True
 
     def _process_csv(self, file_path: str) -> CSVResult:  # noqa: D401
-        """Process CSV file synchronously."""
-        encoding = self._detect_encoding(file_path)
-        analysis = self._analyze_csv_structure(file_path, encoding)
+        """Process CSV file with per-operation timeouts."""
+        import signal
+
+        def timeout_handler(signum, frame):  # noqa: D401
+            raise TimeoutError("CSV operation timeout")
+
+        signal.signal(signal.SIGALRM, timeout_handler)
+
+        try:
+            signal.alarm(10)
+            encoding = self._detect_encoding(file_path)
+            signal.alarm(0)
+
+            signal.alarm(15)
+            analysis = self._analyze_csv_structure(file_path, encoding)
+            signal.alarm(0)
+        finally:
+            signal.alarm(0)
 
         if analysis.file_size_mb > 10:
             return self._process_large_csv(file_path, encoding, analysis)
