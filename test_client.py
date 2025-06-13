@@ -41,7 +41,7 @@ async def test_mcp_server():
             
             # 3. 파일 읽기 테스트 (샘플 파일이 있는 경우)
             test_files = [  # 텍스트 파일
-                "testfS.pdf",   # PDF 파일 (존재한다면)
+                "test.pdf",   # PDF 파일 (존재한다면)
                 "test.csv",   # CSV 파일 (존재한다면)
             ]
             
@@ -51,8 +51,7 @@ async def test_mcp_server():
                     print(f"   테스트 파일: {file_path}")
                     result = await session.call_tool("read_file", {
                         "file_path": file_path,
-                        "output_format": "markdown",
-                        "force_processor": "ocr"
+                        "output_format": "markdown"
                     })
                     
                     content = result.content[0].text

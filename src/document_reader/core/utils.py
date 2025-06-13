@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import signal
 import asyncio
+import concurrent.futures
 
 from functools import wraps
 

@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+test_files/
+output/
+*.pdf
+*.csv
+*.png
+*.jpg
+debug_test.py
+test_simple.py
+test_client.py
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README*.md
+LICENSE 

@@ -9,9 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import numpy as np
-import pandas as pd
-
 from .base_processor import BaseProcessor
 from ..core.utils import with_timeout
 
@@ -127,23 +124,12 @@ class CSVProcessor(BaseProcessor):
 
     def _process_csv(self, file_path: str) -> CSVResult:  # noqa: D401
         """Process CSV file with per-operation timeouts."""
-        import signal
-
-        def timeout_handler(signum, frame):  # noqa: D401
-            raise TimeoutError("CSV operation timeout")
-
-        signal.signal(signal.SIGALRM, timeout_handler)
-
         try:
-            signal.alarm(10)
             encoding = self._detect_encoding(file_path)
-            signal.alarm(0)
-
-            signal.alarm(15)
             analysis = self._analyze_csv_structure(file_path, encoding)
-            signal.alarm(0)
-        finally:
-            signal.alarm(0)
+        except Exception as e:
+            logger.error(f"CSV processing error: {e}")
+            raise
 
         if analysis.file_size_mb > 10:
             return self._process_large_csv(file_path, encoding, analysis)
@@ -173,6 +159,8 @@ class CSVProcessor(BaseProcessor):
         self, file_path: str, encoding: str
     ) -> CSVAnalysis:  # noqa: D401
         def _analyze() -> CSVAnalysis:  # noqa: D401
+            import pandas as pd
+            
             sample_df = pd.read_csv(
                 file_path,
                 encoding=encoding,
@@ -234,6 +222,9 @@ class CSVProcessor(BaseProcessor):
         self, file_path: str, encoding: str, analysis: CSVAnalysis
     ) -> CSVResult:  # noqa: D401
         def _process() -> CSVResult:
+            import pandas as pd
+            import numpy as np
+            
             df = pd.read_csv(file_path, encoding=encoding, low_memory=False)
             preview_df = df.head(self.config.MAX_ROWS_PREVIEW)
             numeric_cols = df.select_dtypes(include=[np.number])
@@ -252,6 +243,8 @@ class CSVProcessor(BaseProcessor):
         self, file_path: str, encoding: str, analysis: CSVAnalysis
     ) -> CSVResult:  # noqa: D401
         def _process() -> CSVResult:
+            import pandas as pd
+            
             chunks: List[CSVChunk] = []
             for chunk_id, chunk_df in enumerate(
                 pd.read_csv(

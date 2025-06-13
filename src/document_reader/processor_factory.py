@@ -196,7 +196,9 @@ class ProcessorFactory:
                 )
 
             # Process file
+            logger.debug(f"About to call processor.process for {file_path}")
             result = processor.process(file_path, output_format, **kwargs)
+            logger.debug(f"processor.process completed for {file_path}")
 
             # Fallback to OCR if PDF processing fails or text is insufficient
             if (

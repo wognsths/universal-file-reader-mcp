@@ -4,6 +4,14 @@ This package provides an MCP server capable of extracting text, tables and
 images from PDF, CSV and image files.
 """
 
+import os
+import warnings
+
+# NumPy 2.x 호환성 경고 억제
+os.environ['NPY_DISABLE_CPU_FEATURES'] = 'AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL'
+warnings.filterwarnings('ignore', message='.*NumPy 1.x.*')
+warnings.filterwarnings('ignore', category=UserWarning)
+
 __version__ = "1.0.0"
 __author__ = "Document Reader Team"
 __description__ = "Universal File Processing MCP server"

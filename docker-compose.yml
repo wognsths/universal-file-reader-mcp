@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build: .
+    volumes:
+      # 처리할 파일들이 있는 디렉토리를 마운트
+      - ./test_files:/app/test_files
+      - ./output:/app/output
+    environment:
+      # Google API 키 (OCR 사용 시 필요)
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      # 로그 레벨
+      - LOG_LEVEL=INFO
+    stdin_open: true
+    tty: true 

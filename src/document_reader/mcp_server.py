@@ -1,9 +1,27 @@
 """MCP server implementation"""
 
+import os
+import warnings
+import sys
+
+# NumPy 경고 억제 (MCP 통신 방해 방지)
+os.environ['NPY_DISABLE_CPU_FEATURES'] = 'AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL'
+os.environ['PYTHONWARNINGS'] = 'ignore'
+
+# stderr를 더 이른 시점에 억제
+import io
+original_stderr = sys.stderr
+sys.stderr = io.StringIO()
+
+warnings.filterwarnings('ignore', message='.*NumPy.*')
+warnings.filterwarnings('ignore', message='.*_ARRAY_API.*')
+warnings.filterwarnings('ignore', category=UserWarning)
+
 import asyncio
 from typing import Dict, Any, Optional, List
 import json
 from pathlib import Path
+import concurrent.futures
 
 try:
     from dotenv import load_dotenv
@@ -21,7 +39,7 @@ from .core.logging_config import setup_logging, get_logger
 from .core.exceptions import DocumentProcessorError
 
 # Configure logging
-setup_logging(log_level="INFO", enable_json=True)
+setup_logging(log_level="DEBUG", enable_json=True)
 logger = get_logger("mcp_server")
 
 # MCP server instance
@@ -59,29 +77,36 @@ class UniversalFileReaderMCP:
         """Read a file and return the processed result."""
         try:
             logger.info(f"File processing requested: {file_path}")
-
-            result = await asyncio.wait_for(
-                asyncio.to_thread(
+            
+            logger.debug(f"About to call process_file in thread for {file_path}")
+            
+            # ThreadPoolExecutor 사용
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(
                     self.factory.process_file,
                     file_path=file_path,
                     output_format=output_format,
                     force_processor=force_processor,
-                    **kwargs,
-                ),
-                timeout=30.0,
-            )
+                    **kwargs
+                )
+                
+                try:
+                    result = await asyncio.wait_for(
+                        asyncio.wrap_future(future),
+                        timeout=30.0
+                    )
+                    logger.debug(f"process_file completed for {file_path}")
+                except asyncio.TimeoutError:
+                    logger.error(f"Processing timeout for: {file_path}")
+                    return {
+                        "success": False,
+                        "error": "Processing timeout (30 seconds)",
+                        "error_type": "TimeoutError",
+                        "file_path": file_path,
+                    }
 
             logger.info(f"File processing finished: {file_path}")
             return result
-
-        except asyncio.TimeoutError:
-            logger.error(f"Processing timeout for: {file_path}")
-            return {
-                "success": False,
-                "error": "Processing timeout (30 seconds)",
-                "error_type": "TimeoutError",
-                "file_path": file_path,
-            }
 
         except DocumentProcessorError as e:
             logger.error(f"Document processing error: {e}")
@@ -179,9 +204,13 @@ async def list_tools() -> List[Tool]:
 @app.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     """Handle tool invocation."""
+    logger.debug(f"Tool call received: {name} with arguments: {arguments}")
+    
     try:
         if name == "read_file":
+            logger.debug("Starting read_file tool call")
             result = await mcp_server.read_file(**arguments)
+            logger.debug(f"read_file result: success={result.get('success')}")
 
             if result.get("success", False):
                 content = result.get("content", "")
