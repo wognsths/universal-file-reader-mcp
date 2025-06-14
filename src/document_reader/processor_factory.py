@@ -155,7 +155,7 @@ class ProcessorFactory:
             elif processor_type == "ocr":
                 return processor_class(self.config.ocr_config)
             elif processor_type == "pdf":
-                return processor_class()
+                return processor_class(self.config.pdf_config)
             else:
                 return processor_class()
 

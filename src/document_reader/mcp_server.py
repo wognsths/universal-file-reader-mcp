@@ -1,5 +1,7 @@
 """MCP server implementation"""
 
+# ruff: noqa: E402
+
 import os
 import warnings
 import sys

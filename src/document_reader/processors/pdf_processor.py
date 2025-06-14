@@ -3,21 +3,27 @@
 import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+import tempfile
 import time
 
 import fitz
 from .base_processor import BaseProcessor
+from .ocr_processor import OCRProcessor
 from ..core.utils import with_timeout
+from ..core.config import PDFConfig
 
 logger = logging.getLogger(__name__)
 
 class PDFProcessor(BaseProcessor):
     """Simple PDF processor for native text extraction"""
-    
-    def __init__(self):
+
+    def __init__(self, config: Optional[PDFConfig] = None):
         super().__init__()
-        self._supported_extensions = ['.pdf']
-        self.max_file_size_mb = 50
+        self.config = config or PDFConfig()
+        self._supported_extensions = [".pdf"]
+        self.max_file_size_mb = self.config.MAX_FILE_SIZE_MB
+        self.extract_images = self.config.EXTRACT_IMAGES
+        self._ocr = OCRProcessor()
 
     def supports(self, file_extension: str) -> bool:
         return file_extension.lower() in self._supported_extensions
@@ -27,7 +33,11 @@ class PDFProcessor(BaseProcessor):
     
     @with_timeout(60)
     def process(
-        self, file_path: str, output_format: str = "markdown", **kwargs
+        self,
+        file_path: str,
+        output_format: str = "markdown",
+        extract_images: Optional[bool] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         """Process PDF with native text extraction only.
 
@@ -53,11 +63,25 @@ class PDFProcessor(BaseProcessor):
             if not extraction_result['success']:
                 return self._create_error_response(extraction_result['error'], file_path)
             
+            # Determine if images should be extracted
+            if extract_images is None:
+                extract_images = self.extract_images
+
+            image_results: List[Dict[str, Any]] = []
+            if extract_images:
+                image_results = self._extract_images_with_ocr(file_path, output_format)
+
             # Format output
             if output_format == "html":
                 formatted_content = self._format_as_html(extraction_result, file_path)
             else:
                 formatted_content = self._format_as_markdown(extraction_result, file_path)
+
+            if extract_images and image_results:
+                if output_format == "html":
+                    formatted_content += self._format_image_results_html(image_results)
+                else:
+                    formatted_content += self._format_image_results_markdown(image_results)
             
             processing_time = time.time() - start_time
             
@@ -82,7 +106,8 @@ class PDFProcessor(BaseProcessor):
                 page_count=extraction_result['page_count'],
                 word_count=extraction_result['word_count'],
                 processing_time=processing_time,
-                extraction_method="native"
+                extraction_method="native",
+                image_count=len(image_results),
             )
             
         except Exception as e:
@@ -295,4 +320,64 @@ class PDFProcessor(BaseProcessor):
         html += """
 </div>
 """
+        return html
+
+    def _extract_images_with_ocr(
+        self, file_path: str, output_format: str
+    ) -> List[Dict[str, Any]]:
+        """Extract images from the PDF and run OCR on each."""
+        ocr_results: List[Dict[str, Any]] = []
+        try:
+            with fitz.open(file_path) as doc:
+                for page_index in range(len(doc)):
+                    page = doc[page_index]
+                    images = page.get_images(full=True)
+                    for img_index, img in enumerate(images):
+                        xref = img[0]
+                        img_info = doc.extract_image(xref)
+                        if not img_info:
+                            continue
+                        img_bytes = img_info.get("image")
+                        if not img_bytes:
+                            continue
+                        temp_path = Path(tempfile.gettempdir()) / (
+                            f"pdf_img_{page_index+1}_{img_index}.png"
+                        )
+                        with open(temp_path, "wb") as img_file:
+                            img_file.write(img_bytes)
+                        result = self._ocr.process(
+                            str(temp_path), output_format=output_format
+                        )
+                        ocr_results.append(
+                            {
+                                "page": page_index + 1,
+                                "index": img_index + 1,
+                                "text": result.get("content", ""),
+                            }
+                        )
+        except Exception as e:
+            logger.warning(f"Image extraction failed: {e}")
+        return ocr_results
+
+    def _format_image_results_markdown(
+        self, results: List[Dict[str, Any]]
+    ) -> str:
+        md = "\n## OCR Results for Images\n"
+        for item in results:
+            md += (
+                f"\n### Page {item['page']} Image {item['index']}\n"
+                f"{item['text']}\n"
+            )
+        return md
+
+    def _format_image_results_html(
+        self, results: List[Dict[str, Any]]
+    ) -> str:
+        html = "<div class=\"image-ocr\"><h3>OCR Results for Images</h3>"
+        for item in results:
+            html += (
+                f"<h4>Page {item['page']} Image {item['index']}</h4>"
+                f"<pre>{item['text']}</pre>"
+            )
+        html += "</div>"
         return html

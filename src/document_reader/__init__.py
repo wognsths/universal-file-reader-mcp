@@ -4,6 +4,8 @@ This package provides an MCP server capable of extracting text, tables and
 images from PDF, CSV and image files.
 """
 
+# ruff: noqa: E402
+
 import os
 import warnings
 

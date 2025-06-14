@@ -85,6 +85,7 @@ def mock_validators(monkeypatch):
 
     monkeypatch.setattr(ocr_processor, "OCRProcessor", DummyOCRProcessor)
     monkeypatch.setattr(processor_factory, "OCRProcessor", DummyOCRProcessor)
+    monkeypatch.setattr(pdf_processor, "OCRProcessor", DummyOCRProcessor)
 
 
 def test_get_processor_csv(tmp_path):
@@ -244,3 +245,65 @@ def test_process_file_pdf_timeout(tmp_path, monkeypatch):
     result = factory.process_file(str(file_path))
     assert result["success"] is True
     assert result.get("fallback_to_ocr") is True
+
+
+def test_pdf_processor_extract_images(monkeypatch, tmp_path):
+    file_path = tmp_path / "img.pdf"
+    file_path.write_bytes(b"%PDF-1.4\n")
+
+    class DummyPDFProcessor(pdf_processor.PDFProcessor):
+        def __init__(self, *a, **k):
+            config = processor_factory.ProcessorConfig().pdf_config
+            config.EXTRACT_IMAGES = True
+            config.USE_OCR_FALLBACK = False
+            super().__init__(config)
+
+        def _validate_pdf_file(self, file_path):
+            return None
+
+        def _extract_text_safe(self, file_path):
+            return {
+                "success": True,
+                "text_content": "text",
+                "page_count": 1,
+                "word_count": 20,
+                "warnings": [],
+                "metadata": {},
+            }
+
+        def _extract_images_with_ocr(self, file_path, output_format):
+            return [{"page": 1, "index": 1, "text": "img-text"}]
+
+    DummyPDFProcessor.__name__ = "PDFProcessor"
+
+    factory = processor_factory.ProcessorFactory(processor_factory.ProcessorConfig())
+    monkeypatch.setattr(factory, "_choose_pdf_processor", lambda p: "pdf")
+
+    monkeypatch.setattr(processor_factory, "PDFProcessor", DummyPDFProcessor)
+    monkeypatch.setattr(
+        processor_factory.FileValidator,
+        "validate_for_processor",
+        lambda *a, **k: {
+            "is_valid": True,
+            "errors": [],
+            "warnings": [],
+            "file_info": {"size_mb": 1},
+        },
+    )
+
+    factory._processor_types["pdf"] = DummyPDFProcessor
+
+    class DummyOCRProc:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def process(self, *args, **kwargs):
+            return {"success": True, "content": "image"}
+
+    monkeypatch.setattr(processor_factory, "OCRProcessor", DummyOCRProc)
+    monkeypatch.setattr(pdf_processor, "OCRProcessor", DummyOCRProc)
+
+    factory._processor_types["ocr"] = DummyOCRProc
+
+    result = factory.process_file(str(file_path))
+    assert "img-text" in result["content"]

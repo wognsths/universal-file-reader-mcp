@@ -80,6 +80,7 @@ parameters for that tool.
 - `MAX_PAGE_PER_PROCESS` – Maximum number of PDF pages processed in one OCR batch.
 - `OCR_TIMEOUT_SECONDS` – Processing timeout in seconds per PDF page (default 30)
 - `TIMEOUT_SECONDS` – Global processing timeout
+- `EXTRACT_IMAGES` – When set to `true`, extracted PDF images are OCR processed and appended to the output
 
 ## Running tests
 
