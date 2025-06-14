@@ -1,6 +1,8 @@
 
+# ruff: noqa: E402
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from typing import Any, Dict, List
+from typing import Any, Dict
 import os
 import uvicorn
 import logging

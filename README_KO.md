@@ -68,6 +68,7 @@ API는 <http://localhost:8000> 에서 접근할 수 있습니다.
 - `MAX_PAGE_PER_PROCESS` – PDF OCR 시 한 번에 처리할 최대 페이지 수
 - `OCR_TIMEOUT_SECONDS` – PDF 페이지당 타임아웃(기본 30초)
 - `TIMEOUT_SECONDS` – 전역 처리 타임아웃
+- `EXTRACT_IMAGES` – `true`로 설정하면 PDF의 이미지도 OCR 처리하여 결과에 포함합니다.
 
 ## 테스트 실행
 
